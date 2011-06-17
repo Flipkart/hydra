@@ -31,10 +31,12 @@ public abstract class Nodes
      * @param jobClass
      *            {@link OneToOneJob} job type
      * @return new {@link OneToOneWorkStation} node
+     * @throws NoSuchMethodException
      */
     public static <I, O> OneToOneWorkStation<I, O> newO2ONode(String name,
             int numThreads, final int maxAttempts,
             final Class<? extends OneToOneJob<I, O>> jobClass)
+            throws NoSuchMethodException
     {
         return OneToOneWorkStation.create(numThreads, maxAttempts, jobClass,
                 SingleLink.<O> create(), name);
@@ -54,11 +56,12 @@ public abstract class Nodes
      * @param selector
      *            {@link Selector}
      * @return new {@link OneToOneWorkStation} node
+     * @throws NoSuchMethodException
      */
     public static <I, O> OneToOneWorkStation<I, O> newO2ONode(String name,
             int numThreads, final int maxAttempts,
             final Class<? extends OneToOneJob<I, O>> jobClass,
-            Selector<O> selector)
+            Selector<O> selector) throws NoSuchMethodException
     {
         return OneToOneWorkStation.create(numThreads, maxAttempts, jobClass,
                 SelectorLink.create(selector), name);
@@ -78,11 +81,13 @@ public abstract class Nodes
      * @param clazz
      *            dummy parameter
      * @return new {@link OneToOneWorkStation} node
+     * @throws NoSuchMethodException
      */
     public static <I, O> OneToOneWorkStation<I, O> newO2ONode(String name,
             int numThreads, final int maxAttempts,
             final Class<? extends OneToOneJob<I, O>> jobClass,
             Class<? extends BroadcastLink<?>> clazz)
+            throws NoSuchMethodException
     {
         return OneToOneWorkStation.create(numThreads, maxAttempts, jobClass,
                 BroadcastLink.<O> create(), name);
@@ -100,10 +105,12 @@ public abstract class Nodes
      * @param jobClass
      *            {@link OneToManyJob} job type
      * @return new {@link OneToManyWorkStation} node
+     * @throws NoSuchMethodException
      */
     public static <I, O> OneToManyWorkStation<I, O> newO2MNode(String name,
             int numThreads, final int maxAttempts,
             final Class<? extends OneToManyJob<I, O>> jobClass)
+            throws NoSuchMethodException
     {
         return OneToManyWorkStation.create(numThreads, maxAttempts, jobClass,
                 SingleLink.<O> create(), name);
@@ -123,11 +130,12 @@ public abstract class Nodes
      * @param selector
      *            {@link Selector}
      * @return new {@link OneToManyWorkStation} node
+     * @throws NoSuchMethodException
      */
     public static <I, O> OneToManyWorkStation<I, O> newO2MNode(String name,
             int numThreads, final int maxAttempts,
             final Class<? extends OneToManyJob<I, O>> jobClass,
-            Selector<O> selector)
+            Selector<O> selector) throws NoSuchMethodException
     {
         return OneToManyWorkStation.create(numThreads, maxAttempts, jobClass,
                 SelectorLink.create(selector), name);
@@ -147,12 +155,14 @@ public abstract class Nodes
      * @param clazz
      *            dummy parameter
      * @return new {@link OneToManyWorkStation} node
+     * @throws NoSuchMethodException
      */
 
     public static <I, O> OneToManyWorkStation<I, O> newO2MNode(String name,
             int numThreads, final int maxAttempts,
             final Class<? extends OneToManyJob<I, O>> jobClass,
             Class<? extends BroadcastLink<?>> clazz)
+            throws NoSuchMethodException
     {
         return OneToManyWorkStation.create(numThreads, maxAttempts, jobClass,
                 BroadcastLink.<O> create(), name);
@@ -173,12 +183,13 @@ public abstract class Nodes
      *            number of jobs to group together
      * 
      * @return new {@link ManyToManyWorkStation} node
+     * @throws NoSuchMethodException
      */
 
     public static <I, O> ManyToManyWorkStation<I, O> newM2MNode(String name,
             int numThreads, final int maxAttempts,
             final Class<? extends ManyToManyJob<I, O>> jobClass,
-            int maxJobsToGroup)
+            int maxJobsToGroup) throws NoSuchMethodException
     {
         return ManyToManyWorkStation.create(numThreads, maxAttempts, jobClass,
                 SingleLink.<O> create(), maxJobsToGroup, name);
@@ -200,12 +211,14 @@ public abstract class Nodes
      * @param maxJobsToGroup
      *            number of jobs to group together
      * @return new {@link ManyToManyWorkStation} node
+     * @throws NoSuchMethodException
      */
 
     public static <I, O> ManyToManyWorkStation<I, O> newM2MNode(String name,
             int numThreads, final int maxAttempts,
             final Class<? extends ManyToManyJob<I, O>> jobClass,
             Selector<O> selector, int maxJobsToGroup)
+            throws NoSuchMethodException
     {
         return ManyToManyWorkStation.create(numThreads, maxAttempts, jobClass,
                 SelectorLink.create(selector), maxJobsToGroup, name);
@@ -228,12 +241,14 @@ public abstract class Nodes
      *            number of jobs to group together
      * 
      * @return new {@link ManyToManyWorkStation} node
+     * @throws NoSuchMethodException
      */
 
     public static <I, O> ManyToManyWorkStation<I, O> newM2MNode(String name,
             int numThreads, final int maxAttempts,
             final Class<? extends ManyToManyJob<I, O>> jobClass,
             Class<? extends BroadcastLink<?>> clazz, int maxJobsToGroup)
+            throws NoSuchMethodException
     {
         return ManyToManyWorkStation.create(numThreads, maxAttempts, jobClass,
                 BroadcastLink.<O> create(), maxJobsToGroup, name);

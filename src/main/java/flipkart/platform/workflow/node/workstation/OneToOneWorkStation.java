@@ -66,7 +66,7 @@ public class OneToOneWorkStation<I, O> extends
 
     public static <I, O> OneToOneWorkStation<I, O> create(int numThreads,
             int maxAttempts, Class<? extends OneToOneJob<I, O>> jobClass,
-            Link<O> link, String... name)
+            Link<O> link, String... name) throws NoSuchMethodException
     {
         final String jobName = (name != null && name.length > 0) ? name[0]
                 : jobClass.getSimpleName();

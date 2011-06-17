@@ -128,6 +128,7 @@ public class ManyToManyWorkStation<I, O> extends
     public static <I, O> ManyToManyWorkStation<I, O> create(int numThreads,
             int maxAttempts, Class<? extends ManyToManyJob<I, O>> jobClass,
             Link<O> link, int maxElements, String... name)
+            throws NoSuchMethodException
     {
         final String jobName = (name != null && name.length > 0) ? name[0]
                 : jobClass.getSimpleName();

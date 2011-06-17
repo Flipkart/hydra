@@ -111,7 +111,7 @@ public class AnyJunctionShowcase
     }
 
     public static void main(String[] args) throws InterruptedException,
-            TypeMismatchException
+            TypeMismatchException, NoSuchMethodException
     {
         final AnyNode<Void, Event> n1 = Nodes.newO2MNode("N1", 1, 1,
                 Enququer.class).anyNode(Void.class, Event.class);

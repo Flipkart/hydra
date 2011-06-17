@@ -1,5 +1,7 @@
 package flipkart.platform.workflow.job;
 
+import java.lang.reflect.Constructor;
+
 /**
  * {@link JobFactory} that uses reflection to create {@link Initializable} jobs
  * using their class
@@ -13,18 +15,19 @@ package flipkart.platform.workflow.job;
 public class DefaultJobFactory<J extends Initializable> implements
         JobFactory<J>
 {
-    private final Class<? extends J> jobClass;
+    private final Constructor<? extends J> jobConstructor;
 
     public DefaultJobFactory(Class<? extends J> jobClass)
+            throws NoSuchMethodException
     {
-        this.jobClass = jobClass;
+        this.jobConstructor = jobClass.getConstructor();
     }
 
     public J newJob()
     {
         try
         {
-            return jobClass.newInstance();
+            return jobConstructor.newInstance();
         }
         catch (Exception e)
         {
@@ -36,7 +39,7 @@ public class DefaultJobFactory<J extends Initializable> implements
     }
 
     public static <J extends Initializable> DefaultJobFactory<J> create(
-            Class<? extends J> jobClass)
+            Class<? extends J> jobClass) throws NoSuchMethodException
     {
         return new DefaultJobFactory<J>(jobClass);
     }
