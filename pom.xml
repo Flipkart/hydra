@@ -11,4 +11,7 @@
     <version>1.0</version>
     <name>Workflow Framework</name>
     <packaging>jar</packaging>
+    <properties>
+	<ciVersion>0.0.0.0</ciVersion>
+    </properties>
 </project>
