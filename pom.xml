@@ -8,10 +8,8 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>flipkart.platform</groupId>
     <artifactId>workflow</artifactId>
-    <version>${ciVersion}</version>
+    <version>1.1</version>
     <name>Workflow Framework</name>
     <packaging>jar</packaging>
-    <properties>
-	<ciVersion>0.0.0.0</ciVersion>
-    </properties>
 </project>
+

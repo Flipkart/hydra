@@ -1,5 +1,6 @@
 package flipkart.platform.workflow.node;
 
+import flipkart.platform.workflow.job.DefaultJobFactory;
 import flipkart.platform.workflow.job.ManyToManyJob;
 import flipkart.platform.workflow.job.OneToManyJob;
 import flipkart.platform.workflow.job.OneToOneJob;
@@ -38,8 +39,8 @@ public abstract class Nodes
             final Class<? extends OneToOneJob<I, O>> jobClass)
             throws NoSuchMethodException
     {
-        return OneToOneWorkStation.create(numThreads, maxAttempts, jobClass,
-                SingleLink.<O> create(), name);
+        return OneToOneWorkStation.create(name, numThreads, maxAttempts,
+                DefaultJobFactory.create(jobClass), SingleLink.<O> create());
     }
 
     /**
@@ -63,8 +64,9 @@ public abstract class Nodes
             final Class<? extends OneToOneJob<I, O>> jobClass,
             Selector<O> selector) throws NoSuchMethodException
     {
-        return OneToOneWorkStation.create(numThreads, maxAttempts, jobClass,
-                SelectorLink.create(selector), name);
+        return OneToOneWorkStation.create(name, numThreads, maxAttempts,
+                DefaultJobFactory.create(jobClass),
+                SelectorLink.create(selector));
     }
 
     /**
@@ -89,8 +91,8 @@ public abstract class Nodes
             Class<? extends BroadcastLink<?>> clazz)
             throws NoSuchMethodException
     {
-        return OneToOneWorkStation.create(numThreads, maxAttempts, jobClass,
-                BroadcastLink.<O> create(), name);
+        return OneToOneWorkStation.create(name, numThreads, maxAttempts,
+                DefaultJobFactory.create(jobClass), BroadcastLink.<O> create());
     }
 
     /**
@@ -112,8 +114,8 @@ public abstract class Nodes
             final Class<? extends OneToManyJob<I, O>> jobClass)
             throws NoSuchMethodException
     {
-        return OneToManyWorkStation.create(numThreads, maxAttempts, jobClass,
-                SingleLink.<O> create(), name);
+        return OneToManyWorkStation.create(name, numThreads, maxAttempts,
+                DefaultJobFactory.create(jobClass), SingleLink.<O> create());
     }
 
     /**
@@ -137,8 +139,9 @@ public abstract class Nodes
             final Class<? extends OneToManyJob<I, O>> jobClass,
             Selector<O> selector) throws NoSuchMethodException
     {
-        return OneToManyWorkStation.create(numThreads, maxAttempts, jobClass,
-                SelectorLink.create(selector), name);
+        return OneToManyWorkStation.create(name, numThreads, maxAttempts,
+                DefaultJobFactory.create(jobClass),
+                SelectorLink.create(selector));
     }
 
     /**
@@ -164,8 +167,8 @@ public abstract class Nodes
             Class<? extends BroadcastLink<?>> clazz)
             throws NoSuchMethodException
     {
-        return OneToManyWorkStation.create(numThreads, maxAttempts, jobClass,
-                BroadcastLink.<O> create(), name);
+        return OneToManyWorkStation.create(name, numThreads, maxAttempts,
+                DefaultJobFactory.create(jobClass), BroadcastLink.<O> create());
     }
 
     /**
@@ -191,8 +194,9 @@ public abstract class Nodes
             final Class<? extends ManyToManyJob<I, O>> jobClass,
             int maxJobsToGroup) throws NoSuchMethodException
     {
-        return ManyToManyWorkStation.create(numThreads, maxAttempts, jobClass,
-                SingleLink.<O> create(), maxJobsToGroup, name);
+        return ManyToManyWorkStation.create(name, numThreads, maxAttempts,
+                DefaultJobFactory.create(jobClass), SingleLink.<O> create(),
+                maxJobsToGroup);
     }
 
     /**
@@ -220,8 +224,9 @@ public abstract class Nodes
             Selector<O> selector, int maxJobsToGroup)
             throws NoSuchMethodException
     {
-        return ManyToManyWorkStation.create(numThreads, maxAttempts, jobClass,
-                SelectorLink.create(selector), maxJobsToGroup, name);
+        return ManyToManyWorkStation.create(name, numThreads, maxAttempts,
+                DefaultJobFactory.create(jobClass),
+                SelectorLink.create(selector), maxJobsToGroup);
     }
 
     /**
@@ -250,7 +255,8 @@ public abstract class Nodes
             Class<? extends BroadcastLink<?>> clazz, int maxJobsToGroup)
             throws NoSuchMethodException
     {
-        return ManyToManyWorkStation.create(numThreads, maxAttempts, jobClass,
-                BroadcastLink.<O> create(), maxJobsToGroup, name);
+        return ManyToManyWorkStation.create(name, numThreads, maxAttempts,
+                DefaultJobFactory.create(jobClass), BroadcastLink.<O> create(),
+                maxJobsToGroup);
     }
 }

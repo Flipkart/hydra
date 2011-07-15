@@ -2,7 +2,6 @@ package flipkart.platform.workflow.node.workstation;
 
 import java.util.Collection;
 
-import flipkart.platform.workflow.job.DefaultJobFactory;
 import flipkart.platform.workflow.job.ExecutionFailureException;
 import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.job.OneToManyJob;
@@ -15,11 +14,11 @@ import flipkart.platform.workflow.link.Link;
  * 
  */
 public class OneToManyWorkStation<I, O> extends
-        WorkStation<I, O, OneToManyJob<I, O>>
+        LinkBasedWorkStation<I, O, OneToManyJob<I, O>>
 {
 
     public OneToManyWorkStation(String name, int numThreads, byte maxAttempts,
-            JobFactory<OneToManyJob<I, O>> jobFactory, Link<O> link)
+            JobFactory<? extends OneToManyJob<I, O>> jobFactory, Link<O> link)
     {
         super(name, numThreads, maxAttempts, jobFactory, link);
     }
@@ -66,13 +65,12 @@ public class OneToManyWorkStation<I, O> extends
         }
     }
 
-    public static <I, O> OneToManyWorkStation<I, O> create(int numThreads,
-            int maxAttempts, Class<? extends OneToManyJob<I, O>> jobClass,
-            Link<O> link, String... name) throws NoSuchMethodException
+    public static <I, O> OneToManyWorkStation<I, O> create(String name,
+            int numThreads, int maxAttempts,
+            JobFactory<? extends OneToManyJob<I, O>> jobFactory, Link<O> link)
+            throws NoSuchMethodException
     {
-        final String jobName = (name != null && name.length > 0) ? name[0]
-                : jobClass.getSimpleName();
-        return new OneToManyWorkStation<I, O>(jobName, numThreads,
-                (byte) maxAttempts, DefaultJobFactory.create(jobClass), link);
+        return new OneToManyWorkStation<I, O>(name, numThreads,
+                (byte) maxAttempts, jobFactory, link);
     }
 }

@@ -7,7 +7,7 @@ package flipkart.platform.workflow.node;
  * @author shashwat
  * 
  */
-public class TypeMismatchException extends Exception
+public class TypeMismatchException extends RuntimeException
 {
     public TypeMismatchException(String message, Throwable cause)
     {

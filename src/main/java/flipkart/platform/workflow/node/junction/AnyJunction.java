@@ -2,12 +2,13 @@ package flipkart.platform.workflow.node.junction;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import flipkart.platform.workflow.node.AnyNode;
 import flipkart.platform.workflow.node.Node;
 import flipkart.platform.workflow.node.TypeMismatchException;
 
-public class AnyJunction extends AbstractJunction
+public class AnyJunction
 {
     public static interface Selector<T>
     {
@@ -35,7 +36,7 @@ public class AnyJunction extends AbstractJunction
     {
         private final Selector<O> selector;
 
-        public FromBuilder(Selector<O> selector)
+        private FromBuilder(Selector<O> selector)
         {
             this.selector = selector;
         }
@@ -46,8 +47,28 @@ public class AnyJunction extends AbstractJunction
         }
     }
 
+    public static enum Isolation {
+        NONE, ISOLATE_WORKFLOW
+    }
+
     private final Map<String, AnyNode<?, ?>> fromNodes = new ConcurrentHashMap<String, AnyNode<?, ?>>();
     private final Map<String, AnyNode<?, ?>> toNodes = new ConcurrentHashMap<String, AnyNode<?, ?>>();
+    private final AtomicBoolean shutdown = new AtomicBoolean(false);
+
+    private final Isolation level;
+
+    private final String name;
+
+    public AnyJunction(String name)
+    {
+        this(name, Isolation.NONE);
+    }
+
+    public AnyJunction(String name, Isolation level)
+    {
+        this.name = name;
+        this.level = level;
+    }
 
     public <T> FromBuilder<T> from(Selector<T> selector)
     {
@@ -66,34 +87,53 @@ public class AnyJunction extends AbstractJunction
         toNodes.put(toNode.getName(), toNode);
     }
 
-    private class AnyJunctionNode<T> extends AbstractJunctionNode<T>
+    private class AnyJunctionNode<T> implements Node<T, T>
     {
-        private final AnyNode<?, T> parentNode;
+        private final AnyNode<?, T> fromNode;
         private final Selector<T> selector;
 
-        public AnyJunctionNode(AnyNode<?, T> parentNode, Selector<T> selector)
+        public AnyJunctionNode(AnyNode<?, T> fromNode, Selector<T> selector)
         {
-            super(parentNode);
-            this.parentNode = parentNode;
+            this.fromNode = fromNode;
             this.selector = selector;
+        }
+
+        @Override
+        public String getName()
+        {
+            return name;
         }
 
         @Override
         public void accept(T i)
         {
-            selector.select(parentNode, i, fromNodes, toNodes);
+            selector.select(fromNode, i, fromNodes, toNodes);
         }
 
         public AnyNode<T, T> anyNode()
         {
             return new AnyNode<T, T>(this);
         }
+
+        @Override
+        public void append(Node<T, ?> node)
+        {
+            throw new UnsupportedOperationException(
+                    "Append to this node is not supported. Trying to append node: "
+                            + node.getName());
+        }
+
+        @Override
+        public void shutdown(boolean awaitTerminataion)
+                throws InterruptedException
+        {
+            AnyJunction.this.shutdown(awaitTerminataion);
+        }
     }
 
-    @Override
     public void shutdown(boolean awaitTerminataion) throws InterruptedException
     {
-        if (shutdown.compareAndSet(false, true))
+        if (level == Isolation.NONE && shutdown.compareAndSet(false, true))
         {
             for (AnyNode<?, ?> node : toNodes.values())
             {

@@ -10,8 +10,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import flipkart.platform.workflow.job.Initializable;
+import flipkart.platform.workflow.job.Job;
 import flipkart.platform.workflow.job.JobFactory;
-import flipkart.platform.workflow.link.Link;
 import flipkart.platform.workflow.node.AnyNode;
 import flipkart.platform.workflow.node.Node;
 
@@ -28,30 +28,27 @@ import flipkart.platform.workflow.node.Node;
  *            Input job description type
  * @param <O>
  *            Output job description type
- * @param <Job>
+ * @param <J>
  *            {@link Initializable} type
  */
-abstract class WorkStation<I, O, Job extends Initializable> implements
-        Node<I, O>
+abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
 {
     protected final ConcurrentLinkedQueue<Entity<I>> queue;
     protected final ThreadPoolExecutor threadPool;
 
-    private final ThreadLocal<Job> threadLocal;
+    private final ThreadLocal<J> threadLocal;
 
     private final String name;
-    private final Link<O> link;
 
     private final byte maxAttempts;
 
     public WorkStation(final String name, int numThreads,
-            final byte maxAttempts, final JobFactory<Job> jobFactory,
-            Link<O> link)
+            final byte maxAttempts, final JobFactory<? extends J> jobFactory)
     {
         this.name = name;
-        this.threadLocal = new ThreadLocal<Job>() {
+        this.threadLocal = new ThreadLocal<J>() {
             @Override
-            protected Job initialValue()
+            protected J initialValue()
             {
                 return jobFactory.newJob();
             }
@@ -62,13 +59,10 @@ abstract class WorkStation<I, O, Job extends Initializable> implements
                 new JobThreadFactory());
         this.maxAttempts = maxAttempts;
         this.queue = new ConcurrentLinkedQueue<Entity<I>>();
-        this.link = link;
+        // this.link = link;
     }
 
-    public void append(Node<O, ?> node)
-    {
-        link.append(node);
-    }
+    public abstract void append(Node<O, ?> node);
 
     @Override
     public String getName()
@@ -104,7 +98,6 @@ abstract class WorkStation<I, O, Job extends Initializable> implements
         while (awaitTerminataion
                 && !threadPool.awaitTermination(10, TimeUnit.MILLISECONDS))
             ;
-        link.sendShutdown(awaitTerminataion);
     }
 
     protected abstract void acceptEntity(Entity<I> e);
@@ -112,11 +105,6 @@ abstract class WorkStation<I, O, Job extends Initializable> implements
     protected Entity<I> pickEntity()
     {
         return queue.poll();
-    }
-
-    protected void putEntity(Entity<O> e)
-    {
-        link.forward(e.i);
     }
 
     protected void putBack(Entity<I> e) throws NoMoreRetriesException
@@ -136,14 +124,14 @@ abstract class WorkStation<I, O, Job extends Initializable> implements
     {
         public void run()
         {
-            final Job job = threadLocal.get();
+            final J job = threadLocal.get();
             if (job != null)
             {
                 execute(job);
             }
         }
 
-        protected abstract void execute(Job job);
+        protected abstract void execute(J job);
     }
 
     private class JobThreadFactory implements ThreadFactory
@@ -162,9 +150,9 @@ abstract class WorkStation<I, O, Job extends Initializable> implements
                     try
                     {
                         // initialization
+                        job = threadLocal.get();
                         try
                         {
-                            job = threadLocal.get();
                             job.init();
                         }
                         catch (Exception e)

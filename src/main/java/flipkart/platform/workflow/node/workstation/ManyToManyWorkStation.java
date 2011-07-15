@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import flipkart.platform.workflow.job.DefaultJobFactory;
 import flipkart.platform.workflow.job.ExecutionFailureException;
 import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.job.ManyToManyJob;
@@ -22,14 +21,14 @@ import flipkart.platform.workflow.link.Link;
  * @param <O>
  */
 public class ManyToManyWorkStation<I, O> extends
-        WorkStation<I, O, ManyToManyJob<I, O>>
+        LinkBasedWorkStation<I, O, ManyToManyJob<I, O>>
 {
     private final int maxJobsToGroup;
     private volatile long workersInQueue = 0;
     private volatile long jobsInQueue = 0;
 
     public ManyToManyWorkStation(String name, int numThreads, byte maxAttempts,
-            JobFactory<ManyToManyJob<I, O>> jobFactory, Link<O> link,
+            JobFactory<? extends ManyToManyJob<I, O>> jobFactory, Link<O> link,
             int maxJobsToGroup)
     {
         super(name, numThreads, maxAttempts, jobFactory, link);
@@ -125,15 +124,12 @@ public class ManyToManyWorkStation<I, O> extends
         }
     }
 
-    public static <I, O> ManyToManyWorkStation<I, O> create(int numThreads,
-            int maxAttempts, Class<? extends ManyToManyJob<I, O>> jobClass,
-            Link<O> link, int maxElements, String... name)
-            throws NoSuchMethodException
+    public static <I, O> ManyToManyWorkStation<I, O> create(String name,
+            int numThreads, int maxAttempts,
+            JobFactory<? extends ManyToManyJob<I, O>> jobFactory, Link<O> link,
+            int maxElements) throws NoSuchMethodException
     {
-        final String jobName = (name != null && name.length > 0) ? name[0]
-                : jobClass.getSimpleName();
-        return new ManyToManyWorkStation<I, O>(jobName, numThreads,
-                (byte) maxAttempts, DefaultJobFactory.create(jobClass), link,
-                maxElements);
+        return new ManyToManyWorkStation<I, O>(name, numThreads,
+                (byte) maxAttempts, jobFactory, link, maxElements);
     }
 }
