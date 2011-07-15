@@ -120,7 +120,7 @@ public class AnyJunctionShowcase
         final AnyNode<Task, Void> n3 = Nodes.newO2ONode("N3", 1, 1,
                 RecoverJob.class).anyNode(Task.class, Void.class);
 
-        final AnyJunction junction = new AnyJunction();
+        final AnyJunction junction = new AnyJunction("J1");
 
         junction.from(new Resolver()).bind(n1);
         junction.to(n2);

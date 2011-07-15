@@ -4,10 +4,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import flipkart.platform.workflow.job.ExecutionFailureException;
+import flipkart.platform.workflow.job.BasicJob;
 import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.job.OneToOneJob;
-import flipkart.platform.workflow.job.BasicJob;
 import flipkart.platform.workflow.node.Node;
 
 /**

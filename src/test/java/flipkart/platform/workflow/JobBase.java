@@ -1,8 +1,8 @@
 package flipkart.platform.workflow;
 
-import flipkart.platform.workflow.job.Initializable;
+import flipkart.platform.workflow.job.Job;
 
-public class JobBase<I> implements Initializable
+public class JobBase<I> implements Job<I>
 {
     @Override
     public void init()
