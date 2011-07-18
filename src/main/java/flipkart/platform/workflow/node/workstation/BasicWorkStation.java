@@ -11,9 +11,8 @@ import flipkart.platform.workflow.node.Node;
 
 /**
  * A {@link WorkStation} that accepts and executes {@link OneToOneJob}.
- * 
+ *
  * @author shashwat
- * 
  */
 
 public class BasicWorkStation<I, O> extends WorkStation<I, O, BasicJob<I, O>>
@@ -38,6 +37,16 @@ public class BasicWorkStation<I, O> extends WorkStation<I, O, BasicJob<I, O>>
     {
         queue.add(e);
         threadPool.execute(new BasicWorker());
+    }
+
+    @Override
+    public void shutdown(boolean awaitTerminataion) throws InterruptedException
+    {
+        super.shutdown(awaitTerminataion);
+        for (Node<O, ?> node : nodes.values())
+        {
+            node.shutdown(awaitTerminataion);
+        }
     }
 
     public static <I, O> BasicWorkStation<I, O> create(String name,
