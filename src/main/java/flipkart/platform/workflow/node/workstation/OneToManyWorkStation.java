@@ -68,7 +68,6 @@ public class OneToManyWorkStation<I, O> extends
     public static <I, O> OneToManyWorkStation<I, O> create(String name,
             int numThreads, int maxAttempts,
             JobFactory<? extends OneToManyJob<I, O>> jobFactory, Link<O> link)
-            throws NoSuchMethodException
     {
         return new OneToManyWorkStation<I, O>(name, numThreads,
                 (byte) maxAttempts, jobFactory, link);

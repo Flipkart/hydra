@@ -43,7 +43,6 @@ public class BasicWorkStation<I, O> extends WorkStation<I, O, BasicJob<I, O>>
     public static <I, O> BasicWorkStation<I, O> create(String name,
             int numThreads, int maxAttempts,
             JobFactory<? extends BasicJob<I, O>> jobFactory)
-            throws NoSuchMethodException
     {
         return new BasicWorkStation<I, O>(name, numThreads, (byte) maxAttempts,
                 jobFactory);

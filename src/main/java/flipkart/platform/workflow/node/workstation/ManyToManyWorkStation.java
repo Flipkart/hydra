@@ -127,7 +127,7 @@ public class ManyToManyWorkStation<I, O> extends
     public static <I, O> ManyToManyWorkStation<I, O> create(String name,
             int numThreads, int maxAttempts,
             JobFactory<? extends ManyToManyJob<I, O>> jobFactory, Link<O> link,
-            int maxElements) throws NoSuchMethodException
+            int maxElements)
     {
         return new ManyToManyWorkStation<I, O>(name, numThreads,
                 (byte) maxAttempts, jobFactory, link, maxElements);
