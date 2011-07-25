@@ -11,5 +11,26 @@
     <version>1.1</version>
     <name>Workflow Framework</name>
     <packaging>jar</packaging>
+
+    <repositories>
+        <repository>
+            <id>central</id>
+            <name>libs-release</name>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <url>http://build.corp.flipkart.com:8081/artifactory/libs-release</url>
+        </repository>
+
+        <repository>
+            <id>snapshots</id>
+            <name>libs-release</name>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+            <url>http://build.corp.flipkart.com:8081/artifactory/libs-snapshots</url>
+        </repository>
+    </repositories>
+
 </project>
 
