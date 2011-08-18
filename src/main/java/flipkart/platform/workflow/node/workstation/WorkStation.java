@@ -21,9 +21,9 @@ import flipkart.platform.workflow.node.Node;
  * creation, jobs are initialized before being executed, and destroyed when the
  * thread is terminating because either the node is shutdown or is idle for long
  * as per the thread pool policies.
- * 
+ *
  * @author shashwat
- * 
+ *
  * @param <I>
  *            Input job description type
  * @param <O>
@@ -111,7 +111,7 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
     {
         if (e.attempt < maxAttempts)
         {
-            acceptEntity(e);
+            acceptEntity(Entity.wrap(e));
         }
         else
         {
