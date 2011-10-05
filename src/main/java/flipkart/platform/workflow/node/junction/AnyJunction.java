@@ -124,10 +124,10 @@ public class AnyJunction
         }
 
         @Override
-        public void shutdown(boolean awaitTerminataion)
+        public void shutdown(boolean awaitTermination)
                 throws InterruptedException
         {
-            AnyJunction.this.shutdown(awaitTerminataion);
+            AnyJunction.this.shutdown(awaitTermination);
         }
     }
 

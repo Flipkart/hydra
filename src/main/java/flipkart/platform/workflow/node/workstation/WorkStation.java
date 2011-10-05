@@ -1,19 +1,15 @@
 package flipkart.platform.workflow.node.workstation;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import flipkart.platform.workflow.job.Initializable;
 import flipkart.platform.workflow.job.Job;
 import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.node.AnyNode;
 import flipkart.platform.workflow.node.Node;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * An abstract {@link Node} implementation which executes job eventually using a
@@ -92,10 +88,10 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
     }
 
     @Override
-    public void shutdown(boolean awaitTerminataion) throws InterruptedException
+    public void shutdown(boolean awaitTermination) throws InterruptedException
     {
         threadPool.shutdown();
-        while (awaitTerminataion
+        while (awaitTermination
                 && !threadPool.awaitTermination(10, TimeUnit.MILLISECONDS))
             ;
     }
