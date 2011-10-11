@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>flipkart.platform</groupId>
     <artifactId>workflow</artifactId>
-    <version>1.4</version>
+    <version>1.4.0</version>
     <name>Workflow Framework</name>
     <packaging>jar</packaging>
 

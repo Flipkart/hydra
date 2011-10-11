@@ -36,10 +36,10 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
 
     private final String name;
 
-    private final byte maxAttempts;
+    private final int maxAttempts;
 
     public WorkStation(final String name, int numThreads,
-            final byte maxAttempts, final JobFactory<? extends J> jobFactory)
+            final int maxAttempts, final JobFactory<? extends J> jobFactory)
     {
         this.name = name;
         this.threadLocal = new ThreadLocal<J>() {
@@ -55,7 +55,6 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
                 new JobThreadFactory());
         this.maxAttempts = maxAttempts;
         this.queue = new ConcurrentLinkedQueue<Entity<I>>();
-        // this.link = link;
     }
 
     public abstract void append(Node<O, ?> node);

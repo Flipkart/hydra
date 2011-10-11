@@ -1,14 +1,9 @@
 package flipkart.platform.workflow.node.workstation;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import flipkart.platform.workflow.job.BasicJob;
 import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.job.OneToOneJob;
 import flipkart.platform.workflow.link.Link;
-import flipkart.platform.workflow.node.Node;
 
 /**
  * A {@link WorkStation} that accepts and executes {@link OneToOneJob}.
@@ -18,10 +13,10 @@ import flipkart.platform.workflow.node.Node;
 
 public class BasicWorkStation<I, O> extends LinkBasedWorkStation<I, O, BasicJob<I, O>>
 {
-    public BasicWorkStation(String name, int numThreads, byte maxAttempts,
-                            JobFactory<? extends BasicJob<I, O>> jobFactory, Link<O> oLink)
+    public BasicWorkStation(String name, int numThreads, JobFactory<? extends BasicJob<I, O>> jobFactory,
+                            Link<O> oLink)
     {
-        super(name, numThreads, maxAttempts, jobFactory, oLink);
+        super(name, numThreads, 1, jobFactory, oLink);
     }
 
     @Override
@@ -31,12 +26,10 @@ public class BasicWorkStation<I, O> extends LinkBasedWorkStation<I, O, BasicJob<
         threadPool.execute(new BasicWorker());
     }
 
-    public static <I, O> BasicWorkStation<I, O> create(String name,
-            int numThreads, int maxAttempts,
-            JobFactory<? extends BasicJob<I, O>> jobFactory, Link<O> link)
+    public static <I, O> BasicWorkStation<I, O> create(String name, int numThreads,
+                                                       JobFactory<? extends BasicJob<I, O>> jobFactory, Link<O> link)
     {
-        return new BasicWorkStation<I, O>(name, numThreads, (byte) maxAttempts,
-                jobFactory, link);
+        return new BasicWorkStation<I, O>(name, numThreads, jobFactory, link);
     }
 
     private class BasicWorker extends Worker

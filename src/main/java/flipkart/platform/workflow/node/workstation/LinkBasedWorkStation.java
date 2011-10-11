@@ -10,7 +10,7 @@ abstract class LinkBasedWorkStation<I, O, J extends Job<I>> extends
 {
     protected final Link<O> link;
 
-    public LinkBasedWorkStation(String name, int numThreads, byte maxAttempts,
+    public LinkBasedWorkStation(String name, int numThreads, int maxAttempts,
             JobFactory<? extends J> jobFactory, Link<O> link)
     {
         super(name, numThreads, maxAttempts, jobFactory);
