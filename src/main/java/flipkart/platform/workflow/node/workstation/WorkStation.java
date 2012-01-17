@@ -37,10 +37,10 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
     private final String name;
     private final JobFactory<? extends J> jobFactory;
 
-    private final byte maxAttempts;
+    private final int maxAttempts;
 
     public WorkStation(final String name, int numThreads,
-            final byte maxAttempts, final JobFactory<? extends J> jobFactory)
+            final int maxAttempts, final JobFactory<? extends J> jobFactory)
     {
         this.name = name;
         this.jobFactory = jobFactory;

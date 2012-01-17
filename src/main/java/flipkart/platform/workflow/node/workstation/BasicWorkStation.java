@@ -1,13 +1,9 @@
 package flipkart.platform.workflow.node.workstation;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import flipkart.platform.workflow.job.BasicJob;
 import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.job.OneToOneJob;
-import flipkart.platform.workflow.node.Node;
+import flipkart.platform.workflow.link.Link;
 
 /**
  * A {@link WorkStation} that accepts and executes {@link OneToOneJob}.
@@ -15,21 +11,12 @@ import flipkart.platform.workflow.node.Node;
  * @author shashwat
  */
 
-public class BasicWorkStation<I, O> extends WorkStation<I, O, BasicJob<I, O>>
+public class BasicWorkStation<I, O> extends LinkBasedWorkStation<I, O, BasicJob<I, O>>
 {
-    private final Map<String, Node<O, ?>> nodes = new ConcurrentHashMap<String, Node<O, ?>>();
-
-    public BasicWorkStation(final String name, int numThreads,
-            final byte maxAttempts,
-            final JobFactory<? extends BasicJob<I, O>> jobFactory)
+    public BasicWorkStation(String name, int numThreads, JobFactory<? extends BasicJob<I, O>> jobFactory,
+                            Link<O> oLink)
     {
-        super(name, numThreads, maxAttempts, jobFactory);
-    }
-
-    @Override
-    public void append(Node<O, ?> node)
-    {
-        nodes.put(node.getName(), node);
+        super(name, numThreads, 1, jobFactory, oLink);
     }
 
     @Override
@@ -39,22 +26,10 @@ public class BasicWorkStation<I, O> extends WorkStation<I, O, BasicJob<I, O>>
         threadPool.execute(new BasicWorker());
     }
 
-    @Override
-    public void shutdown(boolean awaitTermination) throws InterruptedException
+    public static <I, O> BasicWorkStation<I, O> create(String name, int numThreads,
+        JobFactory<? extends BasicJob<I, O>> jobFactory, Link<O> link)
     {
-        super.shutdown(awaitTermination);
-        for (Node<O, ?> node : nodes.values())
-        {
-            node.shutdown(awaitTermination);
-        }
-    }
-
-    public static <I, O> BasicWorkStation<I, O> create(String name,
-            int numThreads, int maxAttempts,
-            JobFactory<? extends BasicJob<I, O>> jobFactory)
-    {
-        return new BasicWorkStation<I, O>(name, numThreads, (byte) maxAttempts,
-                jobFactory);
+        return new BasicWorkStation<I, O>(name, numThreads, jobFactory, link);
     }
 
     private class BasicWorker extends Worker
@@ -65,8 +40,7 @@ public class BasicWorkStation<I, O> extends WorkStation<I, O, BasicJob<I, O>>
             final Entity<I> e = pickEntity();
             try
             {
-                job.execute(e.i, BasicWorkStation.this,
-                        Collections.unmodifiableMap(nodes));
+                job.execute(e.i, BasicWorkStation.this, link);
             }
             catch (Exception ex)
             {
