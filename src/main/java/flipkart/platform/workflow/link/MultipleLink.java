@@ -28,12 +28,12 @@ abstract class MultipleLink<T> implements Link<T>
 
     public abstract void forward(T i);
 
-    public void sendShutdown(boolean awaitTerminataion)
+    public void sendShutdown(boolean awaitTermination)
             throws InterruptedException
     {
         for (Node<T, ?> node : nodes.values())
         {
-            node.shutdown(awaitTerminataion);
+            node.shutdown(awaitTermination);
         }
     }
 }

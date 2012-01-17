@@ -46,10 +46,10 @@ public interface Node<I, O>
      * accepted after node is shutdown. Method may not be called multiple times.
      * Has weak thread safety guarantees.
      * 
-     * @param awaitTerminataion
+     * @param awaitTermination
      *            <code>true</code> to wait for termination of all nodes.
      *            <code>false</code> otherwise.
      * @throws InterruptedException
      */
-    public void shutdown(boolean awaitTerminataion) throws InterruptedException;
+    public void shutdown(boolean awaitTermination) throws InterruptedException;
 }

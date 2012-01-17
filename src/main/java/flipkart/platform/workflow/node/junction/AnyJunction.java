@@ -124,20 +124,20 @@ public class AnyJunction
         }
 
         @Override
-        public void shutdown(boolean awaitTerminataion)
+        public void shutdown(boolean awaitTermination)
                 throws InterruptedException
         {
-            AnyJunction.this.shutdown(awaitTerminataion);
+            AnyJunction.this.shutdown(awaitTermination);
         }
     }
 
-    public void shutdown(boolean awaitTerminataion) throws InterruptedException
+    public void shutdown(boolean awaitTermination) throws InterruptedException
     {
         if (level == Isolation.NONE && shutdown.compareAndSet(false, true))
         {
             for (AnyNode<?, ?> node : toNodes.values())
             {
-                node.shutdown(awaitTerminataion);
+                node.shutdown(awaitTermination);
             }
         }
     }

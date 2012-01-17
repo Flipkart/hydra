@@ -39,11 +39,11 @@ public interface Link<I>
     /**
      * Sends shutdown to the attached nodes.
      * 
-     * @param awaitTerminataion
+     * @param awaitTermination
      *            if <code>true</code>, awaits until all nodes are shutdown. Set
      *            to <code>false</code> to return immediately
      * @throws InterruptedException
      */
-    public void sendShutdown(boolean awaitTerminataion)
+    public void sendShutdown(boolean awaitTermination)
             throws InterruptedException;
 }

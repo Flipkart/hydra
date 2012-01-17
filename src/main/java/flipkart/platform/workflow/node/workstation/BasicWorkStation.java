@@ -40,12 +40,12 @@ public class BasicWorkStation<I, O> extends WorkStation<I, O, BasicJob<I, O>>
     }
 
     @Override
-    public void shutdown(boolean awaitTerminataion) throws InterruptedException
+    public void shutdown(boolean awaitTermination) throws InterruptedException
     {
-        super.shutdown(awaitTerminataion);
+        super.shutdown(awaitTermination);
         for (Node<O, ?> node : nodes.values())
         {
-            node.shutdown(awaitTerminataion);
+            node.shutdown(awaitTermination);
         }
     }
 

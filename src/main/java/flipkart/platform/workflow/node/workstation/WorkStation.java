@@ -92,10 +92,10 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
     }
 
     @Override
-    public void shutdown(boolean awaitTerminataion) throws InterruptedException
+    public void shutdown(boolean awaitTermination) throws InterruptedException
     {
         threadPool.shutdown();
-        while (awaitTerminataion
+        while (awaitTermination
                 && !threadPool.awaitTermination(10, TimeUnit.MILLISECONDS))
             ;
     }

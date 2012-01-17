@@ -108,8 +108,8 @@ public class AnyNode<I, O>
         }
     }
 
-    public void shutdown(boolean awaitTerminataion) throws InterruptedException
+    public void shutdown(boolean awaitTermination) throws InterruptedException
     {
-        node.shutdown(awaitTerminataion);
+        node.shutdown(awaitTermination);
     }
 }

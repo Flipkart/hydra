@@ -31,12 +31,12 @@ public class SingleLink<T> implements Link<T>
         }
     }
 
-    public void sendShutdown(boolean awaitTerminataion)
+    public void sendShutdown(boolean awaitTermination)
             throws InterruptedException
     {
         if (canForward())
         {
-            node.shutdown(awaitTerminataion);
+            node.shutdown(awaitTermination);
         }
     }
 
