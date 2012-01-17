@@ -1,16 +1,16 @@
 package flipkart.platform.workflow;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import flipkart.platform.workflow.job.ManyToManyJob;
 import flipkart.platform.workflow.job.OneToOneJob;
 import flipkart.platform.workflow.link.SelectorLink.Selector;
 import flipkart.platform.workflow.node.AnyNode;
 import flipkart.platform.workflow.node.Node;
 import flipkart.platform.workflow.node.Nodes;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Showcase
 {
@@ -147,9 +147,9 @@ public class Showcase
             final AnyNode<?, ?> b = Nodes.newO2ONode("Job2", 2, 1, Job1.class)
                     .anyNode(String.class, Integer.class);
 
-            b.appendAny(a);
+            //b.appendAny(a); // will throw exception - wrong append
 
-            b.acceptAny(1);
+            //b.acceptAny(1); // will throw exception - wrong param
             b.shutdown(true);
 
         }

@@ -12,13 +12,11 @@ import java.lang.reflect.Constructor;
  *            Classes that extend {@link Initializable}
  */
 
-public class DefaultJobFactory<J extends Initializable> implements
-        JobFactory<J>
+public class DefaultJobFactory<J> implements JobFactory<J>
 {
-    private final Constructor<? extends J> jobConstructor;
+    private final Constructor<J> jobConstructor;
 
-    public DefaultJobFactory(Class<? extends J> jobClass)
-            throws NoSuchMethodException
+    public DefaultJobFactory(Class<J> jobClass) throws NoSuchMethodException
     {
         this.jobConstructor = jobClass.getConstructor();
     }
@@ -31,15 +29,11 @@ public class DefaultJobFactory<J extends Initializable> implements
         }
         catch (Exception e)
         {
-            // TODO: log
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
-
-        return null;
     }
 
-    public static <J extends Initializable> DefaultJobFactory<J> create(
-            Class<? extends J> jobClass) throws NoSuchMethodException
+    public static <J> DefaultJobFactory<J> create(Class<J> jobClass) throws NoSuchMethodException
     {
         return new DefaultJobFactory<J>(jobClass);
     }

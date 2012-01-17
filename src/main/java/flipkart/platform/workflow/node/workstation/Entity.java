@@ -30,7 +30,7 @@ class Entity<I>
         return new Entity<I>(i);
     }
 
-    public static <I> Entity<I> wrap(Entity<I> e)
+    public static <I> Entity<I> from(Entity<I> e)
     {
         return new Entity<I>(e);
     }

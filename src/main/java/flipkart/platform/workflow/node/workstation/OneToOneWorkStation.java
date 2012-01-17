@@ -7,9 +7,9 @@ import flipkart.platform.workflow.link.Link;
 
 /**
  * A {@link WorkStation} that accepts and executes {@link OneToOneJob}.
- * 
+ *
  * @author shashwat
- * 
+ *
  */
 
 public class OneToOneWorkStation<I, O> extends
@@ -41,7 +41,10 @@ public class OneToOneWorkStation<I, O> extends
             {
                 final O o = job.execute(e.i);
 
-                putEntity(Entity.wrap(o));
+                if (o != null)
+                {
+                    putEntity(Entity.wrap(o));
+                }
             }
             catch (ExecutionFailureException ex)
             {

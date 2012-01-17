@@ -9,9 +9,9 @@ import flipkart.platform.workflow.node.Node;
  * @author shashwat
  * 
  * @param <J>
- *            An {@link Initializable} type
+ *            A {@link Job} type
  */
-public interface JobFactory<J extends Initializable>
+public interface JobFactory<J>
 {
     public J newJob();
 }

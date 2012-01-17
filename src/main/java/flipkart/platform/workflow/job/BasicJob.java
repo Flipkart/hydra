@@ -1,8 +1,8 @@
 package flipkart.platform.workflow.job;
 
-import java.util.Map;
-
 import flipkart.platform.workflow.node.Node;
+
+import java.util.Map;
 
 public interface BasicJob<I, O> extends Job<I>
 {

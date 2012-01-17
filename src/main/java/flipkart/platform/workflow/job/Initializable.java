@@ -21,4 +21,24 @@ public interface Initializable
      * Destruction
      */
     public void destroy();
+
+    class LifeCycle
+    {
+        public static <T> void initialize(T t)
+        {
+            if(t instanceof Initializable)
+            {
+                ((Initializable)t).init();
+            }
+        }
+
+        public static <T> void destroy(T t)
+        {
+            if(t instanceof Initializable)
+            {
+                ((Initializable)t).destroy();
+            }
+        }
+    }
+
 }
