@@ -2,7 +2,7 @@ package flipkart.platform.workflow.node.junction;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import flipkart.platform.workflow.node.AnyNode;
 import flipkart.platform.workflow.node.Node;
@@ -23,8 +23,6 @@ public class AnyJunction
          *            {@link Node}s containing this link
          * @param toNodes
          *            {@link Node}s registered with this link
-         * @return List of nodes to forward to. An empty or null return value
-         *         will cause the job to be discarded.
          * 
          */
         public void select(AnyNode<?, T> node, T i,
@@ -47,13 +45,26 @@ public class AnyJunction
         }
     }
 
-    public static enum Isolation {
-        NONE, ISOLATE_WORKFLOW
+    public static enum Isolation
+    {
+        /**
+         * Forward shutdown signal to toNodes, if any of fromNodes sends it.
+         */
+        NONE,
+        /**
+         * Forward shutdown signal to toNodes, only if all fromNodes sends it.
+         */
+        REF_COUNTED,
+        /**
+         * Never forward shutdown to toNodes.
+         */
+        ISOLATE_WORKFLOW
     }
 
     private final Map<String, AnyNode<?, ?>> fromNodes = new ConcurrentHashMap<String, AnyNode<?, ?>>();
     private final Map<String, AnyNode<?, ?>> toNodes = new ConcurrentHashMap<String, AnyNode<?, ?>>();
-    private final AtomicBoolean shutdown = new AtomicBoolean(false);
+
+    private final AtomicInteger shutdown = new AtomicInteger(0);
 
     private final Isolation level;
 
@@ -80,6 +91,7 @@ public class AnyJunction
     {
         fromNode.appendAny(new AnyJunctionNode<T>(fromNode, selector).anyNode());
         fromNodes.put(fromNode.getName(), fromNode);
+        shutdown.incrementAndGet();
     }
 
     public <I> void to(AnyNode<I, ?> toNode)
@@ -133,7 +145,23 @@ public class AnyJunction
 
     public void shutdown(boolean awaitTermination) throws InterruptedException
     {
-        if (level == Isolation.NONE && shutdown.compareAndSet(false, true))
+        final boolean canShutDown;
+        switch (level)
+        {
+        case NONE:
+            int count = shutdown.get();
+            canShutDown = count > 0 && shutdown.compareAndSet(count, 0);
+            break;
+        case REF_COUNTED:
+            canShutDown = (0 == shutdown.decrementAndGet());
+            break;
+        case ISOLATE_WORKFLOW:
+        default:
+            canShutDown = false;
+            break;
+        }
+
+        if (canShutDown)
         {
             for (AnyNode<?, ?> node : toNodes.values())
             {
