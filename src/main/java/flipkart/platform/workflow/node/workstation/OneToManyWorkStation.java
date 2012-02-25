@@ -1,11 +1,11 @@
 package flipkart.platform.workflow.node.workstation;
 
-import java.util.Collection;
-
 import flipkart.platform.workflow.job.ExecutionFailureException;
 import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.job.OneToManyJob;
 import flipkart.platform.workflow.link.Link;
+
+import java.util.Collection;
 
 /**
  * A {@link WorkStation} that executes {@link OneToManyJob}
@@ -13,11 +13,10 @@ import flipkart.platform.workflow.link.Link;
  * @author shashwat
  * 
  */
-public class OneToManyWorkStation<I, O> extends
-        LinkBasedWorkStation<I, O, OneToManyJob<I, O>>
+public class OneToManyWorkStation<I, O> extends LinkBasedWorkStation<I, O, OneToManyJob<I, O>>
 {
 
-    public OneToManyWorkStation(String name, int numThreads, byte maxAttempts,
+    public OneToManyWorkStation(String name, int numThreads, int maxAttempts,
             JobFactory<? extends OneToManyJob<I, O>> jobFactory, Link<O> link)
     {
         super(name, numThreads, maxAttempts, jobFactory, link);

@@ -12,14 +12,11 @@ import flipkart.platform.workflow.link.Link;
  *
  */
 
-public class OneToOneWorkStation<I, O> extends
-        LinkBasedWorkStation<I, O, OneToOneJob<I, O>>
+public class OneToOneWorkStation<I, O> extends LinkBasedWorkStation<I, O, OneToOneJob<I, O>>
 {
 
-    public OneToOneWorkStation(final String name, int numThreads,
-            final byte maxAttempts,
-            final JobFactory<? extends OneToOneJob<I, O>> jobFactory,
-            Link<O> link)
+    public OneToOneWorkStation(final String name, int numThreads, int maxAttempts,
+            final JobFactory<? extends OneToOneJob<I, O>> jobFactory, Link<O> link)
     {
         super(name, numThreads, maxAttempts, jobFactory, link);
     }

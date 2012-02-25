@@ -52,13 +52,14 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
             }
         };
 
-        this.threadPool = new ThreadPoolExecutor(numThreads, numThreads, 0,
-                TimeUnit.MICROSECONDS, new LinkedBlockingQueue<Runnable>(),
-                new JobThreadFactory());
         this.maxAttempts = maxAttempts;
         this.queue = new ConcurrentLinkedQueue<Entity<I>>();
 
         Initializable.LifeCycle.initialize(jobFactory);
+
+        this.threadPool = new ThreadPoolExecutor(numThreads, numThreads, 0,
+            TimeUnit.MICROSECONDS, new LinkedBlockingQueue<Runnable>(),
+            new JobThreadFactory());
     }
 
     public abstract void append(Node<O, ?> node);
@@ -134,7 +135,7 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
         protected abstract void execute(J job);
     }
 
-    private class JobThreadFactory implements ThreadFactory
+    protected class JobThreadFactory implements ThreadFactory
     {
         private final AtomicInteger threadNumber = new AtomicInteger(1);
 
