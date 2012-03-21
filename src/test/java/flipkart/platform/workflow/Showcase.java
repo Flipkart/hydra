@@ -1,15 +1,19 @@
 package flipkart.platform.workflow;
 
+import flipkart.platform.workflow.job.DefaultJobFactory;
 import flipkart.platform.workflow.job.ManyToManyJob;
 import flipkart.platform.workflow.job.OneToOneJob;
 import flipkart.platform.workflow.link.SelectorLink.Selector;
+import flipkart.platform.workflow.link.SingleLink;
 import flipkart.platform.workflow.node.AnyNode;
 import flipkart.platform.workflow.node.Node;
 import flipkart.platform.workflow.node.Nodes;
+import flipkart.platform.workflow.node.workstation.ManyToManyWorkStation;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Showcase
@@ -70,7 +74,9 @@ public class Showcase
         @Override
         public List<Integer> execute(List<Integer> jobList)
         {
+            System.out.println("MultiJob list size: " + jobList.size());
             List<Integer> intList = new ArrayList<Integer>();
+
             for (Integer i : jobList)
             {
                 intList.add(i + 1);
@@ -112,8 +118,8 @@ public class Showcase
             final Node<String, Integer> ws1 = Nodes.newO2ONode("Job1", 2, 1,
                     Job1.class);
 
-            final Node<Integer, Integer> wsM = Nodes.newM2MNode("MultiJob", 2,
-                    2, MultiJob.class, 3);
+            final Node<Integer, Integer> wsM = ManyToManyWorkStation.create("MultiJob", 2, 2,
+                DefaultJobFactory.create(MultiJob.class), SingleLink.<Integer>create(), 3, 3, TimeUnit.MILLISECONDS);
 
             final Node<Integer, String> ws2 = Nodes.newO2ONode("Job2", 2, 2,
                     Job2.class, new MySelector());
@@ -151,7 +157,7 @@ public class Showcase
 
             //b.acceptAny(1); // will throw exception - wrong param
             b.shutdown(true);
-
+            
         }
         catch (Exception e)
         {

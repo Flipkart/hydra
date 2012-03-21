@@ -17,6 +17,7 @@ public class JobBase<I> implements Job<I>, Initializable
 
     public void failed(I i, Throwable cause)
     {
-        System.out.println("Job " + i + " failed: " + cause.getMessage());
+        System.out.println("Job " + i + " failed");
+        cause.printStackTrace();
     }
 }
