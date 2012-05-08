@@ -5,6 +5,7 @@ import flipkart.platform.workflow.job.Job;
 import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.node.AnyNode;
 import flipkart.platform.workflow.node.Node;
+import flipkart.platform.workflow.utils.RefCounter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,18 +19,24 @@ import java.util.concurrent.atomic.AtomicInteger;
  * thread is terminating because either the node is shutdown or is idle for long
  * as per the thread pool policies.
  *
- * @author shashwat
- *
  * @param <I>
- *            Input job description type
+ *     Input job description type
  * @param <O>
- *            Output job description type
+ *     Output job description type
  * @param <J>
- *            {@link Job} type
+ *     {@link Job} type
+ * @author shashwat
  */
 abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
 {
-    protected final ConcurrentLinkedQueue<Entity<I>> queue;
+    public static enum RunState
+    {
+        ACTIVE,
+        SHUTTING_DOWN,
+        SHUTDOWN
+    }
+
+    private final ConcurrentLinkedQueue<Entity<I>> queue;
     protected final ThreadPoolExecutor threadPool;
 
     private final ThreadLocal<J> threadLocal;
@@ -39,12 +46,16 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
 
     private final int maxAttempts;
 
+    private volatile RunState state = RunState.ACTIVE;
+    private final RefCounter activeWorkers = new RefCounter(0);
+
     public WorkStation(final String name, int numThreads,
-            final int maxAttempts, final JobFactory<? extends J> jobFactory)
+        final int maxAttempts, final JobFactory<? extends J> jobFactory)
     {
         this.name = name;
         this.jobFactory = jobFactory;
-        this.threadLocal = new ThreadLocal<J>() {
+        this.threadLocal = new ThreadLocal<J>()
+        {
             @Override
             protected J initialValue()
             {
@@ -62,8 +73,6 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
             new JobThreadFactory());
     }
 
-    public abstract void append(Node<O, ?> node);
-
     @Override
     public String getName()
     {
@@ -73,7 +82,34 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
     @Override
     public void accept(I i)
     {
-        acceptEntity(Entity.wrap(i));
+        if (state == RunState.ACTIVE)
+        {
+            acceptEntity(Entity.wrap(i));
+        }
+        else
+        {
+            throw new RuntimeException("accept() called after shutdown()");
+        }
+    }
+
+    @Override
+    public void shutdown(boolean awaitTermination) throws InterruptedException
+    {
+        state = RunState.SHUTTING_DOWN;
+
+        // loop and check if there are no jobs in the queue and no workers executing any job
+        while (awaitTermination && !isDone())
+        {
+            Thread.sleep(10);
+        }
+
+        shutdownResources(awaitTermination);
+        state = RunState.SHUTDOWN;
+    }
+
+    public boolean isDone()
+    {
+        return (queue.isEmpty() && activeWorkers.isZero());
     }
 
     public List<Entity<I>> getIncompleteJobs()
@@ -91,17 +127,20 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
         return new AnyNode<I, O>(this);
     }
 
-    @Override
-    public void shutdown(boolean awaitTermination) throws InterruptedException
+    protected final void acceptEntity(Entity<I> i)
+    {
+        queue.add(i);
+        scheduleWorker();
+    }
+
+    protected void shutdownResources(boolean awaitTermination) throws InterruptedException
     {
         threadPool.shutdown();
         while (awaitTermination
-                && !threadPool.awaitTermination(10, TimeUnit.MILLISECONDS))
+            && !threadPool.awaitTermination(10, TimeUnit.MILLISECONDS))
             ;
         Initializable.LifeCycle.destroy(jobFactory);
     }
-
-    protected abstract void acceptEntity(Entity<I> e);
 
     protected Entity<I> pickEntity()
     {
@@ -117,9 +156,11 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
         else
         {
             throw new NoMoreRetriesException("Failed after attempts: "
-                    + e.attempt);
+                + e.attempt);
         }
     }
+
+    protected abstract void scheduleWorker();
 
     protected abstract class Worker implements Runnable
     {
@@ -128,7 +169,15 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
             final J job = threadLocal.get();
             if (job != null)
             {
-                execute(job);
+                activeWorkers.offer();
+                try
+                {
+                    execute(job);
+                }
+                finally
+                {
+                    activeWorkers.take();
+                }
             }
         }
 
@@ -141,7 +190,8 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
 
         public Thread newThread(Runnable r)
         {
-            return new Thread(r, name + "-" + threadNumber.getAndIncrement()) {
+            return new Thread(r, name + "-" + threadNumber.getAndIncrement())
+            {
 
                 @Override
                 public void run()
@@ -163,6 +213,10 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
                         }
                         // Processing
                         super.run();
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
                     }
                     finally
                     {

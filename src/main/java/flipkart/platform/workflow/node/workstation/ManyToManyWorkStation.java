@@ -52,11 +52,9 @@ public class ManyToManyWorkStation<I, O> extends
         schedulerThread.start();
     }
 
-    @Override
-    protected void acceptEntity(Entity<I> e)
+    protected void scheduleWorker()
     {
         final long currentJobsCount = jobsInQueue.offer();
-        queue.add(e);
         if (currentJobsCount == maxJobsToGroup)
         {
             schedulerThread.interrupt();
@@ -64,11 +62,11 @@ public class ManyToManyWorkStation<I, O> extends
     }
 
     @Override
-    public void shutdown(boolean awaitTermination) throws InterruptedException
+    protected void shutdownResources(boolean awaitTermination) throws InterruptedException
     {
         schedulerThread.shutdown();
         schedulerThread.join();
-        super.shutdown(awaitTermination);
+        super.shutdownResources(awaitTermination);
     }
 
     protected class SchedulerThread extends Thread
@@ -94,7 +92,14 @@ public class ManyToManyWorkStation<I, O> extends
                     final int jobsCommitted = (int) jobsInQueue.take(maxJobsToGroup);
                     if (jobsCommitted == 0)
                         break;
-                    threadPool.execute(new ManyToManyWorker(jobsCommitted));
+                    try
+                    {
+                        threadPool.execute(new ManyToManyWorker(jobsCommitted));
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
                 } while (jobsInQueue.peek() > maxJobsToGroup || interrupted()); // loop while we are being interrupted
             }
         }
@@ -118,9 +123,6 @@ public class ManyToManyWorkStation<I, O> extends
         @Override
         protected void execute(ManyToManyJob<I, O> job)
         {
-            //waitingWorkers.incrementAndGet();
-            //final int jobsCommitted = (int) jobsInQueue.take(maxJobsToGroup);
-
             if (jobsCommitted > 0)
             {
                 final List<Entity<I>> entityList = new ArrayList<Entity<I>>(jobsCommitted);
