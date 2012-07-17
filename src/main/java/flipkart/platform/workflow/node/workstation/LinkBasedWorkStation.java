@@ -25,7 +25,7 @@ abstract class LinkBasedWorkStation<I, O, J extends Job<I>> extends
     @Override
     public void shutdown(boolean awaitTermination) throws InterruptedException
     {
-        super.shutdown(true);
+        super.shutdown(awaitTermination);
         link.sendShutdown(awaitTermination);
     }
 

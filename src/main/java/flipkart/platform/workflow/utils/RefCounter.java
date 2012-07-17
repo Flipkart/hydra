@@ -20,7 +20,7 @@ public class RefCounter
         return counter.get();
     }
 
-    // a fuzzy kind of take, can fail to take in concurrent access. No false positives but many false negatives
+    // a fuzzy kind of take, can fail to take in case of concurrent access. No false positives but many false negatives
     public boolean bloomTake()
     {
         final long current = counter.get();
@@ -60,5 +60,10 @@ public class RefCounter
     public long offer(int n)
     {
         return counter.addAndGet(n);
+    }
+
+    public boolean isZero()
+    {
+        return peek() == 0;
     }
 }

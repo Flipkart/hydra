@@ -22,9 +22,8 @@ public class OneToOneWorkStation<I, O> extends LinkBasedWorkStation<I, O, OneToO
     }
 
     @Override
-    protected void acceptEntity(Entity<I> e)
+    protected void scheduleWorker()
     {
-        queue.add(e);
         threadPool.execute(new OneToOneWorker());
     }
 

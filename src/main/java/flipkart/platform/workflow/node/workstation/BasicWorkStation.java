@@ -20,9 +20,8 @@ public class BasicWorkStation<I, O> extends LinkBasedWorkStation<I, O, BasicJob<
     }
 
     @Override
-    protected void acceptEntity(Entity<I> e)
+    protected void scheduleWorker()
     {
-        queue.add(e);
         threadPool.execute(new BasicWorker());
     }
 
