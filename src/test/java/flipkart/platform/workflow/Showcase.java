@@ -157,7 +157,6 @@ public class Showcase
 
             //b.acceptAny(1); // will throw exception - wrong param
             b.shutdown(true);
-            
         }
         catch (Exception e)
         {

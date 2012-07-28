@@ -4,6 +4,7 @@ import flipkart.platform.workflow.job.BasicJob;
 import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.job.OneToOneJob;
 import flipkart.platform.workflow.link.Link;
+import flipkart.platform.workflow.queue.MessageCtx;
 
 /**
  * A {@link WorkStation} that accepts and executes {@link OneToOneJob}.
@@ -36,14 +37,17 @@ public class BasicWorkStation<I, O> extends LinkBasedWorkStation<I, O, BasicJob<
         @Override
         protected void execute(BasicJob<I, O> job)
         {
-            final Entity<I> e = pickEntity();
+            final MessageCtx<I> messageCtx = queue.read();
+            final I i = messageCtx.get();
             try
             {
-                job.execute(e.i, BasicWorkStation.this, link);
+                job.execute(i, BasicWorkStation.this, link);
+                messageCtx.ack();
             }
             catch (Exception ex)
             {
-                job.failed(e.i, ex);
+                job.failed(i, ex);
+                messageCtx.discard();
             }
         }
 

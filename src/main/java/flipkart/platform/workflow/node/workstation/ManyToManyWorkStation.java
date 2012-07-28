@@ -4,6 +4,9 @@ import flipkart.platform.workflow.job.ExecutionFailureException;
 import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.job.ManyToManyJob;
 import flipkart.platform.workflow.link.Link;
+import flipkart.platform.workflow.queue.MessageCtx;
+import flipkart.platform.workflow.queue.MessageCtxBatch;
+import flipkart.platform.workflow.queue.NoMoreRetriesException;
 import flipkart.platform.workflow.utils.RefCounter;
 
 import java.util.ArrayList;
@@ -125,17 +128,12 @@ public class ManyToManyWorkStation<I, O> extends
         {
             if (jobsCommitted > 0)
             {
-                final List<Entity<I>> entityList = new ArrayList<Entity<I>>(jobsCommitted);
+                final MessageCtxBatch<I> messageCtxBatch = queue.read(jobsCommitted);
+
                 final List<I> jobList = new ArrayList<I>(jobsCommitted);
-                for (int count = 0; count < jobsCommitted; ++count)
+                for (MessageCtx<I> messageCtx : messageCtxBatch)
                 {
-                    final Entity<I> e = pickEntity();
-                    if (e == null)
-                    {
-                        break;
-                    }
-                    entityList.add(e);
-                    jobList.add(e.i);
+                    jobList.add(messageCtx.get());
                 }
 
                 try
@@ -143,33 +141,38 @@ public class ManyToManyWorkStation<I, O> extends
                     final Collection<O> outList = job.execute(jobList);
                     for (O o : outList)
                     {
-                        putEntity(Entity.wrap(o));
+                        putEntity(o);
                     }
+
+                    for (MessageCtx<I> messageCtx : messageCtxBatch)
+                    {
+                        messageCtx.ack();
+                    }
+                    messageCtxBatch.commit();
                 }
                 catch (ExecutionFailureException ex)
                 {
-                    for (Entity<I> e : entityList)
+                    for (MessageCtx<I> messageCtx : messageCtxBatch)
                     {
                         try
                         {
-                            putBack(e);
+                            messageCtx.retry(maxAttempts);
                         }
                         catch (NoMoreRetriesException fex)
                         {
                             job.failed(
-                                e.i,
-                                new ExecutionFailureException(fex
-                                    .getMessage()
-                                    + ", cause: "
-                                    + ex.getMessage(), ex));
+                                messageCtx.get(),
+                                new ExecutionFailureException(fex.getMessage() + ", cause: " + ex.getMessage(),
+                                    ex));
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    for (Entity<I> e : entityList)
+                    for (MessageCtx<I> messageCtx : messageCtxBatch)
                     {
-                        job.failed(e.i, ex);
+                        job.failed(messageCtx.get(), ex);
+                        messageCtx.discard();
                     }
                 }
 
@@ -187,7 +190,7 @@ public class ManyToManyWorkStation<I, O> extends
         JobFactory<? extends ManyToManyJob<I, O>> jobFactory, Link<O> link, int maxElements, long maxDelay,
         TimeUnit unit)
     {
-        return new ManyToManyWorkStation<I, O>(name, numThreads, (byte) maxAttempts, jobFactory, link, maxElements,
+        return new ManyToManyWorkStation<I, O>(name, numThreads, maxAttempts, jobFactory, link, maxElements,
             maxDelay, unit);
     }
 }

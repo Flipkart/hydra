@@ -1,16 +1,21 @@
 package flipkart.platform.workflow.node.workstation;
 
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import com.yammer.metrics.annotation.Timed;
 import flipkart.platform.workflow.job.Initializable;
 import flipkart.platform.workflow.job.Job;
 import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.node.AnyNode;
 import flipkart.platform.workflow.node.Node;
+import flipkart.platform.workflow.queue.ConcurrentQueue;
+import flipkart.platform.workflow.queue.MessageCtx;
+import flipkart.platform.workflow.queue.NoMoreRetriesException;
+import flipkart.platform.workflow.queue.Queue;
 import flipkart.platform.workflow.utils.RefCounter;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * An abstract {@link Node} implementation which executes job eventually using a
@@ -27,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *     {@link Job} type
  * @author shashwat
  */
-abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
+public abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
 {
     public static enum RunState
     {
@@ -36,21 +41,22 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
         SHUTDOWN
     }
 
-    private final ConcurrentLinkedQueue<Entity<I>> queue;
     protected final ThreadPoolExecutor threadPool;
+    
+    protected final Queue<I> queue;
+
+    protected final int maxAttempts;
 
     private final ThreadLocal<J> threadLocal;
-
     private final String name;
-    private final JobFactory<? extends J> jobFactory;
 
-    private final int maxAttempts;
+    private final JobFactory<? extends J> jobFactory;
 
     private volatile RunState state = RunState.ACTIVE;
     private final RefCounter activeWorkers = new RefCounter(0);
 
-    public WorkStation(final String name, int numThreads,
-        final int maxAttempts, final JobFactory<? extends J> jobFactory)
+    public WorkStation(String name, int numThreads,
+        int maxAttempts, final JobFactory<? extends J> jobFactory)
     {
         this.name = name;
         this.jobFactory = jobFactory;
@@ -64,7 +70,7 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
         };
 
         this.maxAttempts = maxAttempts;
-        this.queue = new ConcurrentLinkedQueue<Entity<I>>();
+        this.queue = new ConcurrentQueue<I>();
 
         Initializable.LifeCycle.initialize(jobFactory);
 
@@ -84,7 +90,7 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
     {
         if (state == RunState.ACTIVE)
         {
-            acceptEntity(Entity.wrap(i));
+            acceptEntity(i);
         }
         else
         {
@@ -112,10 +118,11 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
         return (queue.isEmpty() && activeWorkers.isZero());
     }
 
-    public List<Entity<I>> getIncompleteJobs()
-    {
-        return new ArrayList<Entity<I>>(queue);
-    }
+    // TODO: implement
+    //public List<Entity<I>> getIncompleteJobs()
+    //{
+    //    return new ArrayList<Entity<I>>(queue);
+    //}
 
     public AnyNode<I, O> anyNode(Class<I> iClass, Class<O> oClass)
     {
@@ -127,9 +134,9 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
         return new AnyNode<I, O>(this);
     }
 
-    protected final void acceptEntity(Entity<I> i)
+    protected final void acceptEntity(I i)
     {
-        queue.add(i);
+        queue.enqueue(i);
         scheduleWorker();
     }
 
@@ -142,28 +149,13 @@ abstract class WorkStation<I, O, J extends Job<I>> implements Node<I, O>
         Initializable.LifeCycle.destroy(jobFactory);
     }
 
-    protected Entity<I> pickEntity()
-    {
-        return queue.poll();
-    }
-
-    protected void putBack(Entity<I> e) throws NoMoreRetriesException
-    {
-        if (e.attempt < maxAttempts)
-        {
-            acceptEntity(Entity.from(e));
-        }
-        else
-        {
-            throw new NoMoreRetriesException("Failed after attempts: "
-                + e.attempt);
-        }
-    }
-
     protected abstract void scheduleWorker();
 
-    protected abstract class Worker implements Runnable
+    public abstract class Worker implements Runnable
     {
+        public final String name = WorkStation.this.getName();
+
+        @Timed
         public void run()
         {
             final J job = threadLocal.get();

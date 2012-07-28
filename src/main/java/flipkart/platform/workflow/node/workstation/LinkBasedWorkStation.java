@@ -29,8 +29,8 @@ abstract class LinkBasedWorkStation<I, O, J extends Job<I>> extends
         link.sendShutdown(awaitTermination);
     }
 
-    protected void putEntity(Entity<O> e)
+    protected void putEntity(O o)
     {
-        link.forward(e.i);
+        link.forward(o);
     }
 }
