@@ -1,16 +1,16 @@
-package flipkart.platform.workflow.node;
+package flipkart.platform.node;
 
+import flipkart.platform.node.jobs.ManyToManyJob;
+import flipkart.platform.node.jobs.OneToManyJob;
+import flipkart.platform.node.jobs.OneToOneJob;
+import flipkart.platform.node.workstation.ManyToManyWorkStation;
+import flipkart.platform.node.workstation.OneToManyWorkStation;
+import flipkart.platform.node.workstation.OneToOneWorkStation;
 import flipkart.platform.workflow.job.DefaultJobFactory;
-import flipkart.platform.workflow.job.ManyToManyJob;
-import flipkart.platform.workflow.job.OneToManyJob;
-import flipkart.platform.workflow.job.OneToOneJob;
 import flipkart.platform.workflow.link.BroadcastLink;
 import flipkart.platform.workflow.link.SelectorLink;
 import flipkart.platform.workflow.link.SelectorLink.Selector;
 import flipkart.platform.workflow.link.SingleLink;
-import flipkart.platform.workflow.node.workstation.ManyToManyWorkStation;
-import flipkart.platform.workflow.node.workstation.OneToManyWorkStation;
-import flipkart.platform.workflow.node.workstation.OneToOneWorkStation;
 
 /**
  * Helper factory to create different types of nodes.
@@ -21,8 +21,8 @@ import flipkart.platform.workflow.node.workstation.OneToOneWorkStation;
 public abstract class Nodes
 {
     /**
-     * Create a {@link OneToOneWorkStation} node with {@link SingleLink}.
-     * 
+     * Create a {@link flipkart.platform.node.workstation.OneToOneWorkStation} node with {@link flipkart.platform.workflow.link.SingleLink}.
+     *
      * @param name
      *            node name
      * @param numThreads
@@ -44,8 +44,8 @@ public abstract class Nodes
     }
 
     /**
-     * Create a {@link OneToOneWorkStation} node with {@link SelectorLink}.
-     * 
+     * Create a {@link OneToOneWorkStation} node with {@link flipkart.platform.workflow.link.SelectorLink}.
+     *
      * @param name
      *            node name
      * @param numThreads
@@ -55,7 +55,7 @@ public abstract class Nodes
      * @param jobClass
      *            {@link OneToOneJob} job type
      * @param selector
-     *            {@link Selector}
+     *            {@link flipkart.platform.workflow.link.SelectorLink.Selector}
      * @return new {@link OneToOneWorkStation} node
      * @throws NoSuchMethodException
      */
@@ -70,8 +70,8 @@ public abstract class Nodes
     }
 
     /**
-     * Create a {@link OneToOneWorkStation} node with {@link BroadcastLink}.
-     * 
+     * Create a {@link flipkart.platform.node.workstation.OneToOneWorkStation} node with {@link flipkart.platform.workflow.link.BroadcastLink}.
+     *
      * @param name
      *            node name
      * @param numThreads
@@ -96,8 +96,8 @@ public abstract class Nodes
     }
 
     /**
-     * Create a {@link OneToManyWorkStation} node with {@link SingleLink}.
-     * 
+     * Create a {@link OneToManyWorkStation} node with {@link flipkart.platform.workflow.link.SingleLink}.
+     *
      * @param name
      *            node name
      * @param numThreads
@@ -119,8 +119,8 @@ public abstract class Nodes
     }
 
     /**
-     * Create a {@link OneToManyWorkStation} node with {@link SelectorLink}.
-     * 
+     * Create a {@link OneToManyWorkStation} node with {@link flipkart.platform.workflow.link.SelectorLink}.
+     *
      * @param name
      *            node name
      * @param numThreads
@@ -130,7 +130,7 @@ public abstract class Nodes
      * @param jobClass
      *            {@link OneToManyJob} job type
      * @param selector
-     *            {@link Selector}
+     *            {@link flipkart.platform.workflow.link.SelectorLink.Selector}
      * @return new {@link OneToManyWorkStation} node
      * @throws NoSuchMethodException
      */
@@ -145,8 +145,8 @@ public abstract class Nodes
     }
 
     /**
-     * Create a {@link OneToManyWorkStation} node with {@link BroadcastLink}.
-     * 
+     * Create a {@link OneToManyWorkStation} node with {@link flipkart.platform.workflow.link.BroadcastLink}.
+     *
      * @param name
      *            node name
      * @param numThreads
@@ -172,8 +172,8 @@ public abstract class Nodes
     }
 
     /**
-     * Create a {@link ManyToManyWorkStation} node with {@link SingleLink}.
-     * 
+     * Create a {@link ManyToManyWorkStation} node with {@link flipkart.platform.workflow.link.SingleLink}.
+     *
      * @param name
      *            node name
      * @param numThreads
@@ -184,7 +184,7 @@ public abstract class Nodes
      *            {@link ManyToManyJob} job type
      * @param maxJobsToGroup
      *            number of jobs to group together
-     * 
+     *
      * @return new {@link ManyToManyWorkStation} node
      * @throws NoSuchMethodException
      */
@@ -200,8 +200,8 @@ public abstract class Nodes
     }
 
     /**
-     * Create a {@link ManyToManyWorkStation} node with {@link SelectorLink}.
-     * 
+     * Create a {@link ManyToManyWorkStation} node with {@link flipkart.platform.workflow.link.SelectorLink}.
+     *
      * @param name
      *            node name
      * @param numThreads
@@ -211,7 +211,7 @@ public abstract class Nodes
      * @param jobClass
      *            {@link ManyToManyJob} job type
      * @param selector
-     *            {@link Selector}
+     *            {@link flipkart.platform.workflow.link.SelectorLink.Selector}
      * @param maxJobsToGroup
      *            number of jobs to group together
      * @return new {@link ManyToManyWorkStation} node
@@ -230,7 +230,7 @@ public abstract class Nodes
     }
 
     /**
-     * Create a {@link ManyToManyWorkStation} node with {@link BroadcastLink}.
+     * Create a {@link ManyToManyWorkStation} node with {@link flipkart.platform.workflow.link.BroadcastLink}.
      * 
      * @param name
      *            node name

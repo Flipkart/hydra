@@ -1,25 +1,24 @@
 package flipkart.platform.workflow;
 
-import flipkart.platform.workflow.job.DefaultJobFactory;
-import flipkart.platform.workflow.job.ManyToManyJob;
-import flipkart.platform.workflow.job.OneToOneJob;
-import flipkart.platform.workflow.link.SelectorLink.Selector;
-import flipkart.platform.workflow.link.SingleLink;
-import flipkart.platform.workflow.node.AnyNode;
-import flipkart.platform.workflow.node.Node;
-import flipkart.platform.workflow.node.Nodes;
-import flipkart.platform.workflow.node.workstation.ManyToManyWorkStation;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import flipkart.platform.node.Nodes;
+import flipkart.platform.node.jobs.ManyToManyJob;
+import flipkart.platform.node.jobs.OneToOneJob;
+import flipkart.platform.node.workstation.ManyToManyWorkStation;
+import flipkart.platform.workflow.job.DefaultJobFactory;
+import flipkart.platform.workflow.link.SelectorLink.Selector;
+import flipkart.platform.workflow.link.SingleLink;
+import flipkart.platform.workflow.node.AnyNode;
+import flipkart.platform.workflow.node.Node;
 
 public class Showcase
 {
     public static class Job1 extends JobBase<String> implements
-            OneToOneJob<String, Integer>
+        OneToOneJob<String, Integer>
     {
         @Override
         public Integer execute(String i)
@@ -65,7 +64,7 @@ public class Showcase
     }
 
     public static class MultiJob extends JobBase<Integer> implements
-            ManyToManyJob<Integer, Integer>
+        ManyToManyJob<Integer, Integer>
     {
         public static AtomicInteger count = new AtomicInteger();
 
@@ -122,7 +121,7 @@ public class Showcase
                 DefaultJobFactory.create(MultiJob.class), SingleLink.<Integer>create(), 3, 3, TimeUnit.MILLISECONDS);
 
             final Node<Integer, String> ws2 = Nodes.newO2ONode("Job2", 2, 2,
-                    Job2.class, new MySelector());
+                Job2.class, new MySelector());
 
             ws1.append(wsM);
             wsM.append(ws2);
@@ -144,7 +143,7 @@ public class Showcase
 
             final long end = System.nanoTime();
             System.out.println("Done");
-            System.out.println(end - start);
+            System.out.println(TimeUnit.MILLISECONDS.convert((end - start), TimeUnit.NANOSECONDS));
 
             // AnyNode
             final AnyNode<?, ?> a = Nodes.newO2ONode("Job1", 2, 1, Job1.class)

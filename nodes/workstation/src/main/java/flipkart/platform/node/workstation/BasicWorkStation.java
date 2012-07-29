@@ -1,13 +1,14 @@
-package flipkart.platform.workflow.node.workstation;
+package flipkart.platform.node.workstation;
 
 import flipkart.platform.workflow.job.BasicJob;
 import flipkart.platform.workflow.job.JobFactory;
-import flipkart.platform.workflow.job.OneToOneJob;
 import flipkart.platform.workflow.link.Link;
 import flipkart.platform.workflow.queue.MessageCtx;
+import flipkart.platform.workflow.utils.NoRetryPolicy;
 
 /**
- * A {@link WorkStation} that accepts and executes {@link OneToOneJob}.
+ * A {@link flipkart.platform.node.workstation.WorkStation} that accepts and executes {@link
+ * flipkart.platform.workflow.job.BasicJob}.
  *
  * @author shashwat
  */
@@ -15,15 +16,15 @@ import flipkart.platform.workflow.queue.MessageCtx;
 public class BasicWorkStation<I, O> extends LinkBasedWorkStation<I, O, BasicJob<I, O>>
 {
     public BasicWorkStation(String name, int numThreads, JobFactory<? extends BasicJob<I, O>> jobFactory,
-                            Link<O> oLink)
+        Link<O> oLink)
     {
-        super(name, numThreads, 1, jobFactory, oLink);
+        super(name, numThreads, new NoRetryPolicy<I, O>(), jobFactory, oLink);
     }
 
     @Override
     protected void scheduleWorker()
     {
-        threadPool.execute(new BasicWorker());
+        executeWorker(new BasicWorker());
     }
 
     public static <I, O> BasicWorkStation<I, O> create(String name, int numThreads,

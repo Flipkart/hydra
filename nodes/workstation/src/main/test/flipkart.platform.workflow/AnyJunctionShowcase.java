@@ -4,11 +4,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 
+import flipkart.platform.node.Nodes;
+import flipkart.platform.node.jobs.OneToManyJob;
+import flipkart.platform.node.jobs.OneToOneJob;
 import flipkart.platform.workflow.job.ExecutionFailureException;
-import flipkart.platform.workflow.job.OneToManyJob;
-import flipkart.platform.workflow.job.OneToOneJob;
 import flipkart.platform.workflow.node.AnyNode;
-import flipkart.platform.workflow.node.Nodes;
 import flipkart.platform.workflow.node.TypeMismatchException;
 import flipkart.platform.workflow.node.junction.AnyJunction;
 import flipkart.platform.workflow.node.junction.AnyJunction.Selector;
@@ -48,7 +48,7 @@ public class AnyJunctionShowcase
     }
 
     public static class Enququer extends JobBase<Void> implements
-            OneToManyJob<Void, Event>
+        OneToManyJob<Void, Event>
     {
         @Override
         public Collection<Event> execute(Void i)
@@ -99,7 +99,7 @@ public class AnyJunctionShowcase
     }
 
     public static class RecoverJob extends JobBase<Task> implements
-            OneToOneJob<Task, Void>
+        OneToOneJob<Task, Void>
     {
         @Override
         public Void execute(Task i) throws ExecutionFailureException
@@ -114,7 +114,7 @@ public class AnyJunctionShowcase
             TypeMismatchException, NoSuchMethodException
     {
         final AnyNode<Void, Event> n1 = Nodes.newO2MNode("N1", 1, 1,
-                Enququer.class).anyNode(Void.class, Event.class);
+            Enququer.class).anyNode(Void.class, Event.class);
         final AnyNode<Event, Void> n2 = Nodes.newO2ONode("N2", 1, 1,
                 ArchiverJob.class).anyNode(Event.class, Void.class);
         final AnyNode<Task, Void> n3 = Nodes.newO2ONode("N3", 1, 1,

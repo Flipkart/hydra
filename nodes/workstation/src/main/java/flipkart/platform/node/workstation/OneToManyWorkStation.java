@@ -1,15 +1,17 @@
-package flipkart.platform.workflow.node.workstation;
+package flipkart.platform.node.workstation;
 
 import java.util.Collection;
+import flipkart.platform.node.jobs.OneToManyJob;
 import flipkart.platform.workflow.job.ExecutionFailureException;
 import flipkart.platform.workflow.job.JobFactory;
-import flipkart.platform.workflow.job.OneToManyJob;
 import flipkart.platform.workflow.link.Link;
+import flipkart.platform.workflow.node.RetryPolicy;
 import flipkart.platform.workflow.queue.MessageCtx;
 import flipkart.platform.workflow.queue.NoMoreRetriesException;
 
 /**
- * A {@link WorkStation} that executes {@link OneToManyJob}
+ * A {@link flipkart.platform.node.workstation.WorkStation} that executes {@link flipkart.platform.workflow.job
+ * .OneToManyJob}
  *
  * @author shashwat
  */
@@ -22,10 +24,16 @@ public class OneToManyWorkStation<I, O> extends LinkBasedWorkStation<I, O, OneTo
         super(name, numThreads, maxAttempts, jobFactory, link);
     }
 
+    public OneToManyWorkStation(String name, int numThreads, RetryPolicy<I, O> retryPolicy,
+        JobFactory<? extends OneToManyJob<I, O>> jobFactory, Link<O> link)
+    {
+        super(name, numThreads, retryPolicy, jobFactory, link);
+    }
+
     @Override
     protected void scheduleWorker()
     {
-        threadPool.execute(new OneToManyWorker());
+        executeWorker(new OneToManyWorker());
     }
 
     private class OneToManyWorker extends Worker
@@ -51,7 +59,7 @@ public class OneToManyWorkStation<I, O> extends LinkBasedWorkStation<I, O, OneTo
                 {
                     try
                     {
-                        e.retry(maxAttempts);
+                        retryPolicy.retry(OneToManyWorkStation.this, e);
                     }
                     catch (NoMoreRetriesException fex)
                     {

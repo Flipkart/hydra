@@ -1,32 +1,45 @@
-package flipkart.platform.workflow.node.workstation;
+package flipkart.platform.node.workstation;
 
+import flipkart.platform.node.jobs.OneToOneJob;
 import flipkart.platform.workflow.job.ExecutionFailureException;
 import flipkart.platform.workflow.job.JobFactory;
-import flipkart.platform.workflow.job.OneToOneJob;
 import flipkart.platform.workflow.link.Link;
+import flipkart.platform.workflow.node.RetryPolicy;
 import flipkart.platform.workflow.queue.MessageCtx;
 import flipkart.platform.workflow.queue.NoMoreRetriesException;
 
 /**
- * A {@link WorkStation} that accepts and executes {@link OneToOneJob}.
+ * A {@link flipkart.platform.node.workstation.WorkStation} that accepts and executes {@link
+ * flipkart.platform.node.jobs.OneToOneJob}.
  *
  * @author shashwat
  */
 
 public class OneToOneWorkStation<I, O> extends LinkBasedWorkStation<I, O, OneToOneJob<I, O>>
 {
-
     public OneToOneWorkStation(final String name, int numThreads, int maxAttempts,
         final JobFactory<? extends OneToOneJob<I, O>> jobFactory, Link<O> link)
     {
         super(name, numThreads, maxAttempts, jobFactory, link);
     }
 
+    public OneToOneWorkStation(final String name, int numThreads, RetryPolicy<I, O> retryPolicy,
+        final JobFactory<? extends OneToOneJob<I, O>> jobFactory, Link<O> link)
+    {
+        super(name, numThreads, retryPolicy, jobFactory, link);
+    }
+
     @Override
     protected void scheduleWorker()
     {
-        threadPool.execute(new OneToOneWorker());
+        executeWorker(new OneToOneWorker());
     }
+
+    //@Override
+    //protected void scheduleWorker()
+    //{
+    //    threadPool.execute(new OneToOneWorker());
+    //}
 
     private class OneToOneWorker extends Worker
     {
@@ -51,7 +64,7 @@ public class OneToOneWorkStation<I, O> extends LinkBasedWorkStation<I, O, OneToO
                 {
                     try
                     {
-                        e.retry(maxAttempts);
+                        retryPolicy.retry(OneToOneWorkStation.this, e);
                     }
                     catch (NoMoreRetriesException fex)
                     {

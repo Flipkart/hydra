@@ -3,9 +3,9 @@ package flipkart.platform.workflow;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import flipkart.platform.workflow.job.OneToOneJob;
+import flipkart.platform.node.Nodes;
+import flipkart.platform.node.jobs.OneToOneJob;
 import flipkart.platform.workflow.node.AnyNode;
-import flipkart.platform.workflow.node.Nodes;
 import flipkart.platform.workflow.node.junction.AnyJunction;
 import flipkart.platform.workflow.node.junction.AnyJunction.Isolation;
 import flipkart.platform.workflow.node.junction.AnyJunction.Selector;
@@ -14,7 +14,7 @@ public class JunctionShowcase
 {
     // dummy jobs which just prints input
     public static class Job1 extends JobBase<String> implements
-            OneToOneJob<String, String>
+        OneToOneJob<String, String>
     {
         @Override
         public String execute(String i)
@@ -68,7 +68,7 @@ public class JunctionShowcase
         {
             // AnyNode
             final AnyNode<?, String> a = Nodes.newO2ONode("Job1", 2, 1,
-                    Job1.class).anyNode(String.class, String.class);
+                Job1.class).anyNode(String.class, String.class);
 
             final AnyNode<?, String> b = Nodes.newO2ONode("Job2", 2, 1,
                     Job2.class).anyNode(String.class, String.class);

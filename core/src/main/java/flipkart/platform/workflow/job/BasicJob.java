@@ -1,5 +1,6 @@
 package flipkart.platform.workflow.job;
 
+import flipkart.platform.workflow.job.Job;
 import flipkart.platform.workflow.link.Link;
 import flipkart.platform.workflow.node.Node;
 

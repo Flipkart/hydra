@@ -12,5 +12,9 @@
     <artifactId>nodes</artifactId>
     <packaging>pom</packaging>
 
+    <modules>
+        <module>workstation</module>
+        <module>http</module>
+    </modules>
 </project>
 
