@@ -6,16 +6,13 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
-import flipkart.platform.workflow.queue.MessageCtx;
-import flipkart.platform.workflow.queue.MessageCtxBatch;
-import flipkart.platform.workflow.queue.Queue;
 import flipkart.platform.workflow.utils.RefCounter;
 
 /**
  * User: shashwat
  * Date: 24/07/12
  */
-public class ConcurrentQueue<I> implements Queue<I>
+public class ConcurrentQueue<I> implements HQueue<I>
 {
     private final ConcurrentLinkedQueue<MessageCtx<I>> backingQueue = new ConcurrentLinkedQueue<MessageCtx<I>>();
     private final RefCounter counter = new RefCounter(0);
@@ -89,20 +86,23 @@ public class ConcurrentQueue<I> implements Queue<I>
         }
 
         @Override
-        public int retry(int maxAttempt) throws NoMoreRetriesException
+        public int retry()
         {
             final int nextAttempt = attempt + 1;
-            if(nextAttempt < maxAttempt)
-            {
-                backingQueue.add(new SimpleMessageCtx(i, nextAttempt));
-                return nextAttempt;
-            }
-            throw new NoMoreRetriesException("Failed after attempts: " + attempt);
+            backingQueue.add(new SimpleMessageCtx(i, nextAttempt));
+            return nextAttempt;
         }
 
         @Override
-        public void discard()
+        public void discard(DiscardAction discardAction)
         {
+            switch (discardAction)
+            {
+            case ENQUEUE:
+                backingQueue.add(this);
+                break;
+
+            }
         }
 
         @Override

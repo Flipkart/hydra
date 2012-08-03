@@ -5,8 +5,10 @@ import flipkart.platform.workflow.job.ExecutionFailureException;
 import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.link.Link;
 import flipkart.platform.workflow.node.RetryPolicy;
+import flipkart.platform.workflow.queue.ConcurrentQueue;
+import flipkart.platform.workflow.queue.HQueue;
 import flipkart.platform.workflow.queue.MessageCtx;
-import flipkart.platform.workflow.queue.NoMoreRetriesException;
+import flipkart.platform.workflow.utils.DefaultRetryPolicy;
 
 /**
  * A {@link flipkart.platform.node.workstation.WorkStation} that accepts and executes {@link
@@ -15,18 +17,12 @@ import flipkart.platform.workflow.queue.NoMoreRetriesException;
  * @author shashwat
  */
 
-public class OneToOneWorkStation<I, O> extends LinkBasedWorkStation<I, O, OneToOneJob<I, O>>
+public class OneToOneWorkStation<I, O> extends WorkStation<I, O, OneToOneJob<I, O>>
 {
-    public OneToOneWorkStation(final String name, int numThreads, int maxAttempts,
-        final JobFactory<? extends OneToOneJob<I, O>> jobFactory, Link<O> link)
+    public OneToOneWorkStation(String name, int numThreads, HQueue<I> queue, RetryPolicy<I> retryPolicy,
+        JobFactory<? extends OneToOneJob<I, O>> jobFactory, Link<O> oLink)
     {
-        super(name, numThreads, maxAttempts, jobFactory, link);
-    }
-
-    public OneToOneWorkStation(final String name, int numThreads, RetryPolicy<I, O> retryPolicy,
-        final JobFactory<? extends OneToOneJob<I, O>> jobFactory, Link<O> link)
-    {
-        super(name, numThreads, retryPolicy, jobFactory, link);
+        super(name, numThreads, queue, retryPolicy, jobFactory, oLink);
     }
 
     @Override
@@ -35,13 +31,7 @@ public class OneToOneWorkStation<I, O> extends LinkBasedWorkStation<I, O, OneToO
         executeWorker(new OneToOneWorker());
     }
 
-    //@Override
-    //protected void scheduleWorker()
-    //{
-    //    threadPool.execute(new OneToOneWorker());
-    //}
-
-    private class OneToOneWorker extends Worker
+    private class OneToOneWorker extends WorkerBase
     {
         @Override
         protected void execute(OneToOneJob<I, O> job)
@@ -56,26 +46,23 @@ public class OneToOneWorkStation<I, O> extends LinkBasedWorkStation<I, O, OneToO
 
                     if (o != null)
                     {
-                        putEntity(o);
+                        sendForward(o);
                     }
                     e.ack();
                 }
                 catch (ExecutionFailureException ex)
                 {
-                    try
+                    if (!retryPolicy.retry(OneToOneWorkStation.this, e))
                     {
-                        retryPolicy.retry(OneToOneWorkStation.this, e);
-                    }
-                    catch (NoMoreRetriesException fex)
-                    {
-                        throw new ExecutionFailureException(fex.getMessage() + ", cause: " + ex.getMessage(), ex);
+                        throw new ExecutionFailureException("No more try available after exception: " +
+                            ex.getMessage(), ex);
                     }
                 }
             }
             catch (Exception ex)
             {
                 job.failed(i, ex);
-                e.discard();
+                e.discard(MessageCtx.DiscardAction.ENQUEUE);
             }
         }
     }
@@ -84,6 +71,7 @@ public class OneToOneWorkStation<I, O> extends LinkBasedWorkStation<I, O, OneToO
         int numThreads, int maxAttempts,
         JobFactory<? extends OneToOneJob<I, O>> jobFactory, Link<O> link)
     {
-        return new OneToOneWorkStation<I, O>(name, numThreads, maxAttempts, jobFactory, link);
+        return new OneToOneWorkStation<I, O>(name, numThreads, new ConcurrentQueue<I>(),
+            new DefaultRetryPolicy<I>(maxAttempts), jobFactory, link);
     }
 }

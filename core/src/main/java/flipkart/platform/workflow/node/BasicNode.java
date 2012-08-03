@@ -1,52 +1,35 @@
 package flipkart.platform.workflow.node;
 
+import com.google.common.util.concurrent.MoreExecutors;
 import flipkart.platform.workflow.job.BasicJob;
-import flipkart.platform.workflow.job.Initializable;
 import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.link.Link;
-import sun.net.www.content.audio.basic;
+import flipkart.platform.workflow.queue.HQueue;
+import flipkart.platform.workflow.queue.MessageCtx;
 
 /**
  * User: shashwat
  * Date: 29/07/12
  */
-public class BasicNode<I, O> implements Node<I, O>
+public class BasicNode<I, O> extends AbstractNode<I, O, BasicJob<I, O>>
 {
-    private final String name;
-    private final JobFactory<? extends BasicJob<I, O>> jobFactory;
-    private final Link<O> link;
-
-    public BasicNode(String name, JobFactory<? extends BasicJob<I, O>> jobFactory, Link<O> link)
+    public BasicNode(String name, HQueue<I> queue, JobFactory<? extends BasicJob<I, O>> jobFactory, Link<O> link)
     {
-        this.name = name;
-        this.jobFactory = jobFactory;
-        this.link = link;
-
-        Initializable.LifeCycle.initialize(jobFactory);
+        super(name, queue, MoreExecutors.sameThreadExecutor(), jobFactory, link);
     }
 
     @Override
-    public String getName()
+    protected void scheduleWorker()
     {
-        return name;
-    }
-
-    @Override
-    public void append(Node<O, ?> node)
-    {
-        link.append(node);
-    }
-
-    @Override
-    public void accept(I i)
-    {
-        final BasicJob<I, O> basicJob = jobFactory.newJob();
-        basicJob.execute(i, this, link);
-    }
-
-    @Override
-    public void shutdown(boolean awaitTermination) throws InterruptedException
-    {
-        Initializable.LifeCycle.destroy(jobFactory);
+        executeWorker(new WorkerBase()
+        {
+            @Override
+            protected void execute(BasicJob<I, O> job)
+            {
+                final MessageCtx<I> messageCtx = queue.read();
+                job.execute(messageCtx.get(), BasicNode.this, BasicNode.this.link);
+                messageCtx.ack();
+            }
+        });
     }
 }

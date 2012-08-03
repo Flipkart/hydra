@@ -1,4 +1,4 @@
-package flipkart.platform.workflow.utils;
+package flipkart.platform.hydra.traits;
 
 import com.google.common.eventbus.EventBus;
 

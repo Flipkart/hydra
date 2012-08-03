@@ -19,11 +19,11 @@
             <version>${project.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>flipkart.platform.hydra.nodes</groupId>
-            <artifactId>workstation</artifactId>
-            <version>${project.version}</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>flipkart.platform.hydra.nodes</groupId>-->
+            <!--<artifactId>workstation</artifactId>-->
+            <!--<version>${project.version}</version>-->
+        <!--</dependency>-->
         
 
         <dependency>

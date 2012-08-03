@@ -6,8 +6,10 @@ import flipkart.platform.workflow.job.ExecutionFailureException;
 import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.link.Link;
 import flipkart.platform.workflow.node.RetryPolicy;
+import flipkart.platform.workflow.queue.ConcurrentQueue;
 import flipkart.platform.workflow.queue.MessageCtx;
-import flipkart.platform.workflow.queue.NoMoreRetriesException;
+import flipkart.platform.workflow.queue.HQueue;
+import flipkart.platform.workflow.utils.DefaultRetryPolicy;
 
 /**
  * A {@link flipkart.platform.node.workstation.WorkStation} that executes {@link flipkart.platform.workflow.job
@@ -15,19 +17,12 @@ import flipkart.platform.workflow.queue.NoMoreRetriesException;
  *
  * @author shashwat
  */
-public class OneToManyWorkStation<I, O> extends LinkBasedWorkStation<I, O, OneToManyJob<I, O>>
+public class OneToManyWorkStation<I, O> extends WorkStation<I, O, OneToManyJob<I, O>>
 {
-
-    public OneToManyWorkStation(String name, int numThreads, int maxAttempts,
-        JobFactory<? extends OneToManyJob<I, O>> jobFactory, Link<O> link)
+    public OneToManyWorkStation(String name, int numThreads, HQueue<I> queue, RetryPolicy<I> retryPolicy,
+        JobFactory<? extends OneToManyJob<I, O>> jobFactory, Link<O> oLink)
     {
-        super(name, numThreads, maxAttempts, jobFactory, link);
-    }
-
-    public OneToManyWorkStation(String name, int numThreads, RetryPolicy<I, O> retryPolicy,
-        JobFactory<? extends OneToManyJob<I, O>> jobFactory, Link<O> link)
-    {
-        super(name, numThreads, retryPolicy, jobFactory, link);
+        super(name, numThreads, queue, retryPolicy, jobFactory, oLink);
     }
 
     @Override
@@ -36,7 +31,7 @@ public class OneToManyWorkStation<I, O> extends LinkBasedWorkStation<I, O, OneTo
         executeWorker(new OneToManyWorker());
     }
 
-    private class OneToManyWorker extends Worker
+    private class OneToManyWorker extends WorkerBase
     {
         @Override
         protected void execute(OneToManyJob<I, O> job)
@@ -51,26 +46,22 @@ public class OneToManyWorkStation<I, O> extends LinkBasedWorkStation<I, O, OneTo
 
                     for (final O o : list)
                     {
-                        putEntity(o);
+                        sendForward(o);
                     }
                     e.ack();
                 }
                 catch (ExecutionFailureException ex)
                 {
-                    try
+                    if (!retryPolicy.retry(OneToManyWorkStation.this, e))
                     {
-                        retryPolicy.retry(OneToManyWorkStation.this, e);
-                    }
-                    catch (NoMoreRetriesException fex)
-                    {
-                        throw new ExecutionFailureException(fex.getMessage() + ", cause: " + ex.getMessage(), ex);
+                        throw new ExecutionFailureException("No more retries after exception: " + ex.getMessage(), ex);
                     }
                 }
             }
             catch (Exception ex)
             {
                 job.failed(i, ex);
-                e.discard();
+                e.discard(MessageCtx.DiscardAction.ENQUEUE);
             }
         }
     }
@@ -79,6 +70,7 @@ public class OneToManyWorkStation<I, O> extends LinkBasedWorkStation<I, O, OneTo
         int numThreads, int maxAttempts,
         JobFactory<? extends OneToManyJob<I, O>> jobFactory, Link<O> link)
     {
-        return new OneToManyWorkStation<I, O>(name, numThreads, maxAttempts, jobFactory, link);
+        return new OneToManyWorkStation<I, O>(name, numThreads, new ConcurrentQueue<I>(),
+            new DefaultRetryPolicy<I>(maxAttempts), jobFactory, link);
     }
 }

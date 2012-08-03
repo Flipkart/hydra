@@ -1,4 +1,4 @@
-package flipkart.platform.workflow.job;
+package flipkart.platform.hydra.traits;
 
 /**
  * Interface for initialize-able classes. The object will be initialized using

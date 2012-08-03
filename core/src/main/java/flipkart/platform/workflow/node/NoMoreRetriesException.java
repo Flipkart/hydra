@@ -1,4 +1,4 @@
-package flipkart.platform.workflow.queue;
+package flipkart.platform.workflow.node;
 
 /**
  * Exception, raised when all tries are exhausted.

@@ -5,45 +5,46 @@ import flipkart.platform.workflow.node.Node;
 /**
  * Link is an interface that defines how two {@link Node}s are connected with
  * each other.
- * 
- * @author shashwat
- * 
+ *
  * @param <I>
+ * @author shashwat
  */
 public interface Link<I>
 {
     /**
      * Attach given node to it's end
-     * 
+     *
      * @param node
-     *            {@link Node} to be attached
+     *     {@link Node} to be attached
      */
     public void append(Node<I, ?> node);
 
     /**
-     * Indicates if the link has one or more node to send messages to.
-     * 
-     * @return <code>true</code> if at minimum one node is available.
+     * Indicates if the link is the terminal, i.e., there are no nodes appended at the end of this link
+     *
+     * @return <code>true</code> if there are no nodes
      *         <code>false</code> otherwise
      */
-    public boolean canForward();
+    public boolean isTerminal();
 
     /**
      * Forward job to the attached nodes
-     * 
+     *
      * @param i
-     *            Job description
+     *     Job description
+     * @return <code>true</code>, if the message was actually forwarded to a node;
+     *         <code>false</code> otherwise
+     *
      */
-    public void forward(I i);
+    public boolean forward(I i);
 
     /**
      * Sends shutdown to the attached nodes.
-     * 
+     *
      * @param awaitTermination
-     *            if <code>true</code>, awaits until all nodes are shutdown. Set
-     *            to <code>false</code> to return immediately
-     * @throws InterruptedException
+     *     if <code>true</code>, awaits until all nodes are shutdown. Set
+     *     to <code>false</code> to return immediately
+     * @throws InterruptedException if thread is interrupted
      */
-    public void sendShutdown(boolean awaitTermination)
-            throws InterruptedException;
+    public void sendShutdown(boolean awaitTermination) throws InterruptedException;
 }

@@ -21,7 +21,7 @@ public class JobProcessTime
     // TODO: Add shutdown hook to shutdown metrics
 
     @Around("target(worker) && execution(@com.yammer.metrics.annotation.Timed * * (..)) && @annotation(annotation)")
-    public Object measureExecTime(ProceedingJoinPoint thisJoinPoint, WorkStation.Worker worker,
+    public Object measureExecTime(ProceedingJoinPoint thisJoinPoint, WorkStation.WorkerBase worker,
         Timed annotation) throws
         Throwable
     {

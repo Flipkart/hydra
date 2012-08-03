@@ -1,15 +1,17 @@
-package flipkart.platform.workflow.job;
+package flipkart.platform.workflow.utils;
 
 import java.lang.reflect.Constructor;
+import flipkart.platform.workflow.job.JobFactory;
 
 /**
- * {@link JobFactory} that uses reflection to create {@link Initializable} jobs
+ * {@link flipkart.platform.workflow.job.JobFactory} that uses reflection to create {@link flipkart.platform.workflow
+  * .job.Initializable} jobs
  * using their class
  * 
  * @author shashwat
  * 
  * @param <J>
- *            Classes that extend {@link Initializable}
+ *            Classes that extend {@link flipkart.platform.hydra.traits.Initializable}
  */
 
 public class DefaultJobFactory<J> implements JobFactory<J>

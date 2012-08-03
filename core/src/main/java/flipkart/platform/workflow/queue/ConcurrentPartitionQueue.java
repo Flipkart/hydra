@@ -12,12 +12,12 @@ import flipkart.platform.workflow.utils.RefCounter;
  */
 
 /**
- * {@link Queue} implementation that can partition messages over a given set of queues using a {@link Partitioner}.
+ * {@link HQueue} implementation that can partition messages over a given set of queues using a {@link Partitioner}.
  *
  * @param <I>
  * @param <Q>
  */
-public class ConcurrentPartitionQueue<I, Q extends Queue<I>> implements Queue<I>
+public class ConcurrentPartitionQueue<I, Q extends HQueue<I>> implements HQueue<I>
 {
     private final Partitioner<I, Q> partitioner;
     private final RefCounter sizeCounter = new RefCounter(0);
@@ -29,17 +29,17 @@ public class ConcurrentPartitionQueue<I, Q extends Queue<I>> implements Queue<I>
 
     /**
      * A factory method to create a new {@link ConcurrentPartitionQueue} with a given number of partitions of a queue
-     * that implements {@link Queue} and different operation-specific partition policies
+     * that implements {@link HQueue} and different operation-specific partition policies
      *
      * @param numPartitions int, number of queues to create
      * @param queueFactory {@link QueueFactory} instance to create new queue for each partition
      * @param enqueuePartitionPolicy {@link EnqueuePartitionPolicy} partition policy to enqueue new messages
      * @param readPartitionPolicy {@link ReadPartitionPolicy} partition policy to read messages from queue
      * @param <I> Message payload type
-     * @param <Q> Queue type
+     * @param <Q> HQueue type
      * @return new {@link ConcurrentPartitionQueue} instance
      */
-    public static <I, Q extends Queue<I>> ConcurrentPartitionQueue<I, Q> create(int numPartitions,
+    public static <I, Q extends HQueue<I>> ConcurrentPartitionQueue<I, Q> create(int numPartitions,
         QueueFactory<I, Q> queueFactory, EnqueuePartitionPolicy<I> enqueuePartitionPolicy,
         ReadPartitionPolicy<I> readPartitionPolicy)
     {
@@ -74,7 +74,7 @@ public class ConcurrentPartitionQueue<I, Q extends Queue<I>> implements Queue<I>
         return messageCtxBatch;
     }
 
-    public UnmodifiableIterator<? extends Queue<I>> iterator()
+    public UnmodifiableIterator<? extends HQueue<I>> iterator()
     {
         return partitioner.iterator();
     }

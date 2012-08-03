@@ -1,19 +1,16 @@
 package flipkart.platform.workflow;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import flipkart.platform.node.Nodes;
+import flipkart.platform.node.builder.WSBuilder;
 import flipkart.platform.node.jobs.ManyToManyJob;
 import flipkart.platform.node.jobs.OneToOneJob;
-import flipkart.platform.node.workstation.ManyToManyWorkStation;
-import flipkart.platform.workflow.job.DefaultJobFactory;
-import flipkart.platform.workflow.link.SelectorLink.Selector;
-import flipkart.platform.workflow.link.SingleLink;
-import flipkart.platform.workflow.node.AnyNode;
+import flipkart.platform.workflow.link.Selector;
 import flipkart.platform.workflow.node.Node;
+import flipkart.platform.workflow.utils.UnModifiableMap;
 
 public class Showcase
 {
@@ -30,7 +27,7 @@ public class Showcase
     }
 
     public static class Job2 extends JobBase<Integer> implements
-            OneToOneJob<Integer, String>
+        OneToOneJob<Integer, String>
     {
         @Override
         public String execute(Integer i)
@@ -42,7 +39,7 @@ public class Showcase
     }
 
     public static class EvenJob extends JobBase<String> implements
-            OneToOneJob<String, Void>
+        OneToOneJob<String, Void>
     {
         @Override
         public Void execute(String i)
@@ -53,7 +50,7 @@ public class Showcase
     }
 
     public static class OddJob extends JobBase<String> implements
-            OneToOneJob<String, Void>
+        OneToOneJob<String, Void>
     {
         @Override
         public Void execute(String i)
@@ -86,7 +83,7 @@ public class Showcase
     }
 
     public static class SingleJob extends JobBase<Integer> implements
-            OneToOneJob<Integer, Integer>
+        OneToOneJob<Integer, Integer>
     {
 
         @Override
@@ -99,13 +96,12 @@ public class Showcase
     public static class MySelector implements Selector<String>
     {
         @Override
-        public List<Node<String, ?>> select(String str,
-                Map<String, Node<String, ?>> nodes)
+        public Collection<Node<String, ?>> select(String str, UnModifiableMap<String, Node<String, ?>> nodes)
         {
             final int i = Integer.parseInt(str);
             final List<Node<String, ?>> outNodes = new ArrayList<Node<String, ?>>();
             outNodes.add(nodes.get((i % 2 == 0) ? EvenJob.class.getSimpleName()
-                    : OddJob.class.getSimpleName()));
+                : OddJob.class.getSimpleName()));
             return outNodes;
         }
     }
@@ -114,22 +110,21 @@ public class Showcase
     {
         try
         {
-            final Node<String, Integer> ws1 = Nodes.newO2ONode("Job1", 2, 1,
-                    Job1.class);
+            final Node<String, Integer> ws1 =
+                WSBuilder.withO2OJob(Job1.class).withMaxRetries(1).build();
 
-            final Node<Integer, Integer> wsM = ManyToManyWorkStation.create("MultiJob", 2, 2,
-                DefaultJobFactory.create(MultiJob.class), SingleLink.<Integer>create(), 3, 3, TimeUnit.MILLISECONDS);
+            final Node<Integer, Integer> wsM =
+                WSBuilder.withM2MJob(MultiJob.class).withBatch(3, 3).withNumThreads(2).withMaxRetries(2).build();
 
-            final Node<Integer, String> ws2 = Nodes.newO2ONode("Job2", 2, 2,
-                Job2.class, new MySelector());
+            final Node<Integer, String> ws2 =
+                WSBuilder.withO2OJob(Job2.class).withMaxRetries(2).withSelector(new MySelector())
+                    .build();
 
             ws1.append(wsM);
             wsM.append(ws2);
 
-            final Node<String, Void> evenNode = Nodes.newO2ONode("EvenJob", 2,
-                    1, EvenJob.class);
-            final Node<String, Void> oddNode = Nodes.newO2ONode("OddJob", 2, 1,
-                    OddJob.class);
+            final Node<String, Void> evenNode = WSBuilder.withO2OJob(EvenJob.class).build();
+            final Node<String, Void> oddNode = WSBuilder.withO2OJob(OddJob.class).build();
 
             ws2.append(evenNode);
             ws2.append(oddNode);
@@ -142,20 +137,9 @@ public class Showcase
             ws1.shutdown(true);
 
             final long end = System.nanoTime();
-            System.out.println("Done");
-            System.out.println(TimeUnit.MILLISECONDS.convert((end - start), TimeUnit.NANOSECONDS));
-
-            // AnyNode
-            final AnyNode<?, ?> a = Nodes.newO2ONode("Job1", 2, 1, Job1.class)
-                    .anyNode(String.class, Integer.class);
-
-            final AnyNode<?, ?> b = Nodes.newO2ONode("Job2", 2, 1, Job1.class)
-                    .anyNode(String.class, Integer.class);
-
-            //b.appendAny(a); // will throw exception - wrong append
-
-            //b.acceptAny(1); // will throw exception - wrong param
-            b.shutdown(true);
+            System.out.print("Done, It took ");
+            System.out.print(TimeUnit.MILLISECONDS.convert((end - start), TimeUnit.NANOSECONDS));
+            System.out.println(" ms to complete");
         }
         catch (Exception e)
         {

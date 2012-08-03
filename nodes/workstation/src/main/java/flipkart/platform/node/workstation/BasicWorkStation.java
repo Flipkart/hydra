@@ -3,7 +3,9 @@ package flipkart.platform.node.workstation;
 import flipkart.platform.workflow.job.BasicJob;
 import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.link.Link;
+import flipkart.platform.workflow.queue.ConcurrentQueue;
 import flipkart.platform.workflow.queue.MessageCtx;
+import flipkart.platform.workflow.queue.HQueue;
 import flipkart.platform.workflow.utils.NoRetryPolicy;
 
 /**
@@ -13,12 +15,18 @@ import flipkart.platform.workflow.utils.NoRetryPolicy;
  * @author shashwat
  */
 
-public class BasicWorkStation<I, O> extends LinkBasedWorkStation<I, O, BasicJob<I, O>>
+public class BasicWorkStation<I, O> extends WorkStation<I, O, BasicJob<I, O>>
 {
-    public BasicWorkStation(String name, int numThreads, JobFactory<? extends BasicJob<I, O>> jobFactory,
-        Link<O> oLink)
+    public BasicWorkStation(String name, int numThreads, HQueue<I> queue,
+        JobFactory<? extends BasicJob<I, O>> basicJobJobFactory, Link<O> oLink)
     {
-        super(name, numThreads, new NoRetryPolicy<I, O>(), jobFactory, oLink);
+        super(name, numThreads, queue, new NoRetryPolicy<I>(), basicJobJobFactory, oLink);
+    }
+
+    public static <I, O> BasicWorkStation<I, O> create(String name, int numThreads,
+        JobFactory<? extends BasicJob<I, O>> jobFactory, Link<O> link)
+    {
+        return new BasicWorkStation<I, O>(name, numThreads, new ConcurrentQueue<I>(), jobFactory, link);
     }
 
     @Override
@@ -27,13 +35,7 @@ public class BasicWorkStation<I, O> extends LinkBasedWorkStation<I, O, BasicJob<
         executeWorker(new BasicWorker());
     }
 
-    public static <I, O> BasicWorkStation<I, O> create(String name, int numThreads,
-        JobFactory<? extends BasicJob<I, O>> jobFactory, Link<O> link)
-    {
-        return new BasicWorkStation<I, O>(name, numThreads, jobFactory, link);
-    }
-
-    private class BasicWorker extends Worker
+    private class BasicWorker extends WorkerBase
     {
         @Override
         protected void execute(BasicJob<I, O> job)
@@ -48,7 +50,7 @@ public class BasicWorkStation<I, O> extends LinkBasedWorkStation<I, O, BasicJob<
             catch (Exception ex)
             {
                 job.failed(i, ex);
-                messageCtx.discard();
+                messageCtx.discard(MessageCtx.DiscardAction.ENQUEUE);
             }
         }
 

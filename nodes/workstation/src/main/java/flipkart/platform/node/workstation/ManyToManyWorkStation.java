@@ -3,15 +3,15 @@ package flipkart.platform.node.workstation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import flipkart.platform.node.jobs.ManyToManyJob;
 import flipkart.platform.workflow.job.ExecutionFailureException;
 import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.link.Link;
 import flipkart.platform.workflow.node.RetryPolicy;
+import flipkart.platform.workflow.queue.ConcurrentQueue;
 import flipkart.platform.workflow.queue.MessageCtx;
 import flipkart.platform.workflow.queue.MessageCtxBatch;
-import flipkart.platform.workflow.queue.NoMoreRetriesException;
+import flipkart.platform.workflow.queue.HQueue;
 import flipkart.platform.workflow.utils.DefaultRetryPolicy;
 import flipkart.platform.workflow.utils.RefCounter;
 
@@ -26,7 +26,7 @@ import flipkart.platform.workflow.utils.RefCounter;
  * @param <O>
  * @author shashwat
  */
-public class ManyToManyWorkStation<I, O> extends LinkBasedWorkStation<I, O, ManyToManyJob<I, O>>
+public class ManyToManyWorkStation<I, O> extends WorkStation<I, O, ManyToManyJob<I, O>>
 {
     private final int maxJobsToGroup;
     private final long maxDelay;
@@ -34,40 +34,16 @@ public class ManyToManyWorkStation<I, O> extends LinkBasedWorkStation<I, O, Many
     private final RefCounter jobsInQueue = new RefCounter(0);
     private final SchedulerThread schedulerThread = new SchedulerThread();
 
-    public ManyToManyWorkStation(String name, int numThreads, int maxAttempts,
-        JobFactory<? extends ManyToManyJob<I, O>> jobFactory, Link<O> link,
-        int maxJobsToGroup)
+    public ManyToManyWorkStation(String name, int numThreads, HQueue<I> queue, RetryPolicy<I> retryPolicy,
+        JobFactory<? extends ManyToManyJob<I, O>> jobFactory, Link<O> oLink, int maxJobsToGroup, long maxDelayMs)
     {
-        this(name, numThreads, maxAttempts, jobFactory, link, maxJobsToGroup, 0, TimeUnit.MILLISECONDS);
-    }
-
-    public ManyToManyWorkStation(String name, int numThreads, RetryPolicy<I, O> retryPolicy,
-        JobFactory<? extends ManyToManyJob<I, O>> jobFactory, Link<O> link,
-        int maxJobsToGroup)
-    {
-        this(name, numThreads, retryPolicy, jobFactory, link, maxJobsToGroup, 0, TimeUnit.MILLISECONDS);
-    }
-
-    public ManyToManyWorkStation(String name, int numThreads, int maxAttempts,
-        JobFactory<? extends ManyToManyJob<I, O>> jobFactory, Link<O> link,
-        int maxJobsToGroup, long maxDelay, TimeUnit unit)
-    {
-        this(name, numThreads, new DefaultRetryPolicy<I, O>(maxAttempts), jobFactory, link, maxJobsToGroup, maxDelay,
-            unit);
-    }
-
-    public ManyToManyWorkStation(String name, int numThreads, RetryPolicy<I, O> retryPolicy,
-        JobFactory<? extends ManyToManyJob<I, O>> jobFactory, Link<O> link,
-        int maxJobsToGroup, long maxDelay, TimeUnit unit)
-    {
-        super(name, numThreads, retryPolicy, jobFactory, link);
-        if (maxJobsToGroup <= 1 || maxDelay < 0)
+        super(name, numThreads, queue, retryPolicy, jobFactory, oLink);
+        if (maxJobsToGroup <= 1 || maxDelayMs < 0)
         {
             throw new IllegalArgumentException("Illegal int arguments to: " + getClass().getSimpleName());
         }
-
         this.maxJobsToGroup = maxJobsToGroup;
-        this.maxDelay = unit.toMillis(maxDelay);
+        this.maxDelay = maxDelayMs;
         schedulerThread.start();
     }
 
@@ -131,7 +107,7 @@ public class ManyToManyWorkStation<I, O> extends LinkBasedWorkStation<I, O, Many
         }
     }
 
-    private class ManyToManyWorker extends Worker
+    private class ManyToManyWorker extends WorkerBase
     {
         private final int jobsCommitted;
 
@@ -158,7 +134,7 @@ public class ManyToManyWorkStation<I, O> extends LinkBasedWorkStation<I, O, Many
                     final Collection<O> outList = job.execute(jobList);
                     for (O o : outList)
                     {
-                        putEntity(o);
+                        sendForward(o);
                     }
 
                     for (MessageCtx<I> messageCtx : messageCtxBatch)
@@ -171,15 +147,11 @@ public class ManyToManyWorkStation<I, O> extends LinkBasedWorkStation<I, O, Many
                 {
                     for (MessageCtx<I> messageCtx : messageCtxBatch)
                     {
-                        try
-                        {
-                            retryPolicy.retry(ManyToManyWorkStation.this, messageCtx);
-                        }
-                        catch (NoMoreRetriesException fex)
+                        if (!retryPolicy.retry(ManyToManyWorkStation.this, messageCtx))
                         {
                             job.failed(
                                 messageCtx.get(),
-                                new ExecutionFailureException(fex.getMessage() + ", cause: " + ex.getMessage(),
+                                new ExecutionFailureException("No more retries after exception: " + ex.getMessage(),
                                     ex));
                         }
                     }
@@ -189,7 +161,7 @@ public class ManyToManyWorkStation<I, O> extends LinkBasedWorkStation<I, O, Many
                     for (MessageCtx<I> messageCtx : messageCtxBatch)
                     {
                         job.failed(messageCtx.get(), ex);
-                        messageCtx.discard();
+                        messageCtx.discard(MessageCtx.DiscardAction.ENQUEUE);
                     }
                 }
 
@@ -198,16 +170,9 @@ public class ManyToManyWorkStation<I, O> extends LinkBasedWorkStation<I, O, Many
     }
 
     public static <I, O> ManyToManyWorkStation<I, O> create(String name, int numThreads, int maxAttempts,
-        JobFactory<? extends ManyToManyJob<I, O>> jobFactory, Link<O> link, int maxElements)
+        JobFactory<? extends ManyToManyJob<I, O>> jobFactory, Link<O> link, int maxElements, long maxDelayMs)
     {
-        return new ManyToManyWorkStation<I, O>(name, numThreads, maxAttempts, jobFactory, link, maxElements);
-    }
-
-    public static <I, O> ManyToManyWorkStation<I, O> create(String name, int numThreads, int maxAttempts,
-        JobFactory<? extends ManyToManyJob<I, O>> jobFactory, Link<O> link, int maxElements, long maxDelay,
-        TimeUnit unit)
-    {
-        return new ManyToManyWorkStation<I, O>(name, numThreads, maxAttempts, jobFactory, link, maxElements,
-            maxDelay, unit);
+        return new ManyToManyWorkStation<I, O>(name, numThreads, new ConcurrentQueue<I>(),
+            new DefaultRetryPolicy<I>(maxAttempts), jobFactory, link, maxElements, maxDelayMs);
     }
 }

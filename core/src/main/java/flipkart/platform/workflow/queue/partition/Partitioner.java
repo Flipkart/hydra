@@ -8,10 +8,10 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 import com.google.common.collect.UnmodifiableIterator;
 import com.google.common.eventbus.EventBus;
-import flipkart.platform.workflow.queue.Queue;
+import flipkart.platform.hydra.traits.Subscriber;
+import flipkart.platform.workflow.queue.HQueue;
 import flipkart.platform.workflow.queue.events.QueueAddedEvent;
 import flipkart.platform.workflow.queue.events.QueueRemovedEvent;
-import flipkart.platform.workflow.utils.Subscriber;
 
 /**
  * User: shashwat
@@ -33,7 +33,7 @@ import flipkart.platform.workflow.utils.Subscriber;
  * @see flipkart.platform.workflow.queue.MessageCtx for generic payload paramter
  * @see flipkart.platform.workflow.queue.ConcurrentPartitionQueue
  */
-public class Partitioner<I, Q extends Queue<I>>
+public class Partitioner<I, Q extends HQueue<I>>
 {
     private final Set<Q> queues = Sets.newSetFromMap(new ConcurrentHashMap<Q, Boolean>());
     private final EventBus eventBus = new EventBus(Partitioner.class.getSimpleName());

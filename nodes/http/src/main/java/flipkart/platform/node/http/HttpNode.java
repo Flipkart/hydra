@@ -1,26 +1,26 @@
 package flipkart.platform.node.http;
 
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
 import com.ning.http.client.*;
-import flipkart.platform.workflow.node.Node;
+import flipkart.platform.workflow.link.Link;
+import flipkart.platform.workflow.node.AbstractNode;
+import flipkart.platform.workflow.queue.MessageCtx;
+import flipkart.platform.workflow.queue.HQueue;
 
 /**
  * User: shashwat
  * Date: 28/07/12
  */
-public abstract class HttpNode<I, O> implements Node<I, O>
+public class HttpNode<I, O> extends AbstractNode<I, O, HttpJob<I, O>>
 {
-    private final String name;
     private final AsyncHttpClient client;
-    private final HttpRequestBuilder<I> requestBuilder;
-    private final HttpNodeOutputBuilder<I, O> httpNodeOutputBuilder;
 
-    public HttpNode(String name, HttpNodeConfiguration config, HttpRequestBuilder<I> requestBuilder,
-        HttpNodeOutputBuilder<I, O> httpNodeOutputBuilder)
+    public HttpNode(String name, HQueue<I> queue, HttpNodeConfiguration config, ExecutorService executorService,
+        HttpJobFactory<I, O> httpJobFactory, Link<O> link)
     {
-        this.name = name;
-        this.requestBuilder = requestBuilder;
-        this.httpNodeOutputBuilder = httpNodeOutputBuilder;
+        super(name, queue, executorService, httpJobFactory, link);
+
         client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder()
             .setConnectionTimeoutInMs((int) config.getConnectionTimeoutInMs())
             .setRequestTimeoutInMs((int) config.getRequestTimeoutInMs())
@@ -30,45 +30,48 @@ public abstract class HttpNode<I, O> implements Node<I, O>
     }
 
     @Override
-    public String getName()
+    protected void shutdownResources(boolean awaitTermination) throws InterruptedException
     {
-        return name;
-    }
-
-    @Override
-    public void accept(final I i)
-    {
-        final Request request = requestBuilder.build(client, i);
-        try
-        {
-            client.executeRequest(request, new AsyncCompletionHandler<O>()
-            {
-                @Override
-                public O onCompleted(Response response) throws Exception
-                {
-                    final O o = httpNodeOutputBuilder.build(i, response);
-                    putEntity(o);
-                    return o;
-                }
-
-                @Override
-                public void onThrowable(Throwable t)
-                {
-                    //TODO: retry on throw
-                }
-            });
-        }
-        catch (IOException e)
-        {
-            //TODO, wait and retry
-        }
-    }
-
-    @Override
-    public void shutdown(boolean awaitTermination) throws InterruptedException
-    {
+        super.shutdownResources(awaitTermination);
         client.close();
     }
 
-    protected abstract void putEntity(O o);
+    @Override
+    protected void scheduleWorker()
+    {
+        executeWorker(new WorkerBase()
+        {
+            @Override
+            protected void execute(final HttpJob<I, O> httpJob)
+            {
+                final MessageCtx<I> messageCtx = queue.read();
+                final I i = messageCtx.get();
+
+                final Request request = httpJob.buildRequest(client, i);
+                try
+                {
+                    client.executeRequest(request, new AsyncCompletionHandler<O>()
+                    {
+                        @Override
+                        public O onCompleted(Response response) throws Exception
+                        {
+                            final O o = httpJob.buildResponse(i, response);
+                            HttpNode.this.sendForward(o);
+                            return o;
+                        }
+
+                        @Override
+                        public void onThrowable(Throwable t)
+                        {
+                            //TODO: retry on throw
+                        }
+                    });
+                }
+                catch (IOException e)
+                {
+                    //TODO, wait and retry
+                }
+            }
+        });
+    }
 }

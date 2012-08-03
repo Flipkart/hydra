@@ -4,7 +4,7 @@ package flipkart.platform.workflow.queue;
  * User: shashwat
  * Date: 23/07/12
  */
-public interface Queue<I>
+public interface HQueue<I>
 {
     void enqueue(I i);
 

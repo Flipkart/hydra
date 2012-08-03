@@ -11,18 +11,18 @@ public interface MessageCtx<I>
         NEW, ACK, RETRY, DISCARD
     }
 
-    // TODO: Command pattern: API design - terminal APIs -> how to model
+    enum DiscardAction
+    {
+        ENQUEUE, SIDELINE, REJECT
+    }
+
     boolean ack();
 
-    int retry(int maxAttempts) throws NoMoreRetriesException;
+    int retry();
 
-    void discard();
+    void discard(DiscardAction discardAction);
     
     I get();
 
     int getAttempt();
-
-    //int getAttempt();
-
-    //State getState();
 }

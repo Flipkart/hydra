@@ -1,7 +1,5 @@
 package flipkart.platform.workflow.node;
 
-import flipkart.platform.workflow.link.SelectorLink;
-
 /**
  * A workflow node that accepts jobs, executes them and forwards their results
  * to other nodes down the workflow if available.
@@ -17,7 +15,7 @@ public interface Node<I, O>
 {
     /**
      * Get node name. Is used to identify a node if multiple nodes are attached
-     * to this node (as in the case of {@link SelectorLink}).
+     * to this node.
      * 
      * @return Node name
      */
@@ -49,7 +47,7 @@ public interface Node<I, O>
      * @param awaitTermination
      *            <code>true</code> to wait for termination of all nodes.
      *            <code>false</code> otherwise.
-     * @throws InterruptedException
+     * @throws InterruptedException if the thread is interrupted
      */
     public void shutdown(boolean awaitTermination) throws InterruptedException;
 }
