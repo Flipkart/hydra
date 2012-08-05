@@ -3,21 +3,20 @@ package flipkart.platform.node.workstation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import flipkart.platform.node.jobs.ManyToManyJob;
 import flipkart.platform.workflow.job.ExecutionFailureException;
 import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.link.Link;
+import flipkart.platform.workflow.node.AbstractNode;
 import flipkart.platform.workflow.node.RetryPolicy;
-import flipkart.platform.workflow.queue.ConcurrentQueue;
+import flipkart.platform.workflow.queue.HQueue;
 import flipkart.platform.workflow.queue.MessageCtx;
 import flipkart.platform.workflow.queue.MessageCtxBatch;
-import flipkart.platform.workflow.queue.HQueue;
-import flipkart.platform.workflow.utils.DefaultRetryPolicy;
 import flipkart.platform.workflow.utils.RefCounter;
 
 /**
- * A {@link flipkart.platform.node.workstation.WorkStation} that executes {@link flipkart.platform.node.jobs
- * .ManyToManyJob}.
+ * A {@link AbstractNode} that executes {@link flipkart.platform.node.jobs.ManyToManyJob}.
  * <p/>
  * The workstation tries to minimize the number of jobs enqueued by grouping
  * together {@link #maxJobsToGroup} jobs together.
@@ -26,7 +25,7 @@ import flipkart.platform.workflow.utils.RefCounter;
  * @param <O>
  * @author shashwat
  */
-public class ManyToManyWorkStation<I, O> extends WorkStation<I, O, ManyToManyJob<I, O>>
+public class ManyToManyWorkStation<I, O> extends AbstractNode<I, O, ManyToManyJob<I, O>>
 {
     private final int maxJobsToGroup;
     private final long maxDelay;
@@ -34,10 +33,10 @@ public class ManyToManyWorkStation<I, O> extends WorkStation<I, O, ManyToManyJob
     private final RefCounter jobsInQueue = new RefCounter(0);
     private final SchedulerThread schedulerThread = new SchedulerThread();
 
-    public ManyToManyWorkStation(String name, int numThreads, HQueue<I> queue, RetryPolicy<I> retryPolicy,
+    public ManyToManyWorkStation(String name, ExecutorService executorService, HQueue<I> queue, RetryPolicy<I> retryPolicy,
         JobFactory<? extends ManyToManyJob<I, O>> jobFactory, Link<O> oLink, int maxJobsToGroup, long maxDelayMs)
     {
-        super(name, numThreads, queue, retryPolicy, jobFactory, oLink);
+        super(name, executorService, queue, retryPolicy, jobFactory, oLink);
         if (maxJobsToGroup <= 1 || maxDelayMs < 0)
         {
             throw new IllegalArgumentException("Illegal int arguments to: " + getClass().getSimpleName());
@@ -147,32 +146,18 @@ public class ManyToManyWorkStation<I, O> extends WorkStation<I, O, ManyToManyJob
                 {
                     for (MessageCtx<I> messageCtx : messageCtxBatch)
                     {
-                        if (!retryPolicy.retry(ManyToManyWorkStation.this, messageCtx))
-                        {
-                            job.failed(
-                                messageCtx.get(),
-                                new ExecutionFailureException("No more retries after exception: " + ex.getMessage(),
-                                    ex));
-                        }
+                        retryMessage(job, messageCtx, ex);
                     }
                 }
                 catch (Exception ex)
                 {
                     for (MessageCtx<I> messageCtx : messageCtxBatch)
                     {
-                        job.failed(messageCtx.get(), ex);
-                        messageCtx.discard(MessageCtx.DiscardAction.ENQUEUE);
+                        discardMessage(job, messageCtx, ex);
                     }
                 }
 
             }
         }
-    }
-
-    public static <I, O> ManyToManyWorkStation<I, O> create(String name, int numThreads, int maxAttempts,
-        JobFactory<? extends ManyToManyJob<I, O>> jobFactory, Link<O> link, int maxElements, long maxDelayMs)
-    {
-        return new ManyToManyWorkStation<I, O>(name, numThreads, new ConcurrentQueue<I>(),
-            new DefaultRetryPolicy<I>(maxAttempts), jobFactory, link, maxElements, maxDelayMs);
     }
 }

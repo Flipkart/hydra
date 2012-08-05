@@ -15,42 +15,36 @@ public class WSBuilder
     public static <I, O, J extends OneToOneJob<I, O>> O2ONodeBuilder<I, O> withO2OJob(Class<J> jobClass) throws
         NoSuchMethodException
     {
-        final O2ONodeBuilder<I, O> nodeBuilder = withO2OJobFactory(DefaultJobFactory.create(jobClass));
-        nodeBuilder.withName(jobClass.getSimpleName());
-        return nodeBuilder;
+        return withO2OJobFactory(jobClass.getSimpleName(), DefaultJobFactory.create(jobClass));
     }
 
-    public static <I, O, J extends OneToOneJob<I, O>> O2ONodeBuilder<I, O> withO2OJobFactory(JobFactory<J> jobFactory)
-        throws NoSuchMethodException
+    public static <I, O, J extends OneToOneJob<I, O>> O2ONodeBuilder<I, O> withO2OJobFactory(String name,
+        JobFactory<J> jobFactory) throws NoSuchMethodException
     {
-        return new O2ONodeBuilder<I, O>(jobFactory);
+        return new O2ONodeBuilder<I, O>(name, jobFactory);
     }
 
     public static <I, O, J extends OneToManyJob<I, O>> O2MNodeBuilder<I, O> withO2MJob(Class<J> jobClass) throws
         NoSuchMethodException
     {
-        final O2MNodeBuilder<I, O> nodeBuilder = withO2MJobFactory(DefaultJobFactory.create(jobClass));
-        nodeBuilder.withName(jobClass.getSimpleName());
-        return nodeBuilder;
+        return withO2MJobFactory(jobClass.getSimpleName(), DefaultJobFactory.create(jobClass));
     }
 
-    public static <I, O, J extends OneToManyJob<I, O>> O2MNodeBuilder<I, O> withO2MJobFactory(
+    public static <I, O, J extends OneToManyJob<I, O>> O2MNodeBuilder<I, O> withO2MJobFactory(String name,
         JobFactory<J> jobFactory) throws NoSuchMethodException
     {
-        return new O2MNodeBuilder<I, O>(jobFactory);
+        return new O2MNodeBuilder<I, O>(name, jobFactory);
     }
 
     public static <I, O, J extends ManyToManyJob<I, O>> M2MNodeBuilder<I, O> withM2MJob(Class<J> jobClass) throws
         NoSuchMethodException
     {
-        final M2MNodeBuilder<I, O> nodeBuilder = withM2MJobFactory(DefaultJobFactory.create(jobClass));
-        nodeBuilder.withName(jobClass.getSimpleName());
-        return nodeBuilder;
+        return withM2MJobFactory(jobClass.getSimpleName(), DefaultJobFactory.create(jobClass));
     }
 
-    public static <I, O, J extends ManyToManyJob<I, O>> M2MNodeBuilder<I, O> withM2MJobFactory(
+    public static <I, O, J extends ManyToManyJob<I, O>> M2MNodeBuilder<I, O> withM2MJobFactory( String name,
         JobFactory<J> jobFactory) throws NoSuchMethodException
     {
-        return new M2MNodeBuilder<I, O>(jobFactory);
+        return new M2MNodeBuilder<I, O>(name, jobFactory);
     }
 }

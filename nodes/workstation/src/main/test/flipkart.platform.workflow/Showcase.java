@@ -82,17 +82,6 @@ public class Showcase
         }
     }
 
-    public static class SingleJob extends JobBase<Integer> implements
-        OneToOneJob<Integer, Integer>
-    {
-
-        @Override
-        public Integer execute(Integer i)
-        {
-            return i + 1;
-        }
-    }
-
     public static class MySelector implements Selector<String>
     {
         @Override
@@ -111,13 +100,13 @@ public class Showcase
         try
         {
             final Node<String, Integer> ws1 =
-                WSBuilder.withO2OJob(Job1.class).withMaxRetries(1).build();
+                WSBuilder.withO2OJob(Job1.class).withMaxAttempts(1).build();
 
             final Node<Integer, Integer> wsM =
-                WSBuilder.withM2MJob(MultiJob.class).withBatch(3, 3).withNumThreads(2).withMaxRetries(2).build();
+                WSBuilder.withM2MJob(MultiJob.class).withBatch(3, 3).withThreadExecutor(2).withMaxAttempts(2).build();
 
             final Node<Integer, String> ws2 =
-                WSBuilder.withO2OJob(Job2.class).withMaxRetries(2).withSelector(new MySelector())
+                WSBuilder.withO2OJob(Job2.class).withMaxAttempts(2).withSelector(new MySelector())
                     .build();
 
             ws1.append(wsM);

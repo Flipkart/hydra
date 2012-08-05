@@ -1,10 +1,9 @@
-package flipkart.platform.node.builder;
+package flipkart.platform.workflow.node;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
 import flipkart.platform.workflow.link.Link;
 import flipkart.platform.workflow.link.Selector;
-import flipkart.platform.workflow.node.Node;
-import flipkart.platform.workflow.node.RetryPolicy;
 import flipkart.platform.workflow.queue.HQueue;
 
 /**
@@ -21,11 +20,15 @@ public interface NodeBuilder<I, O>
 
     NodeBuilder<I, O> withRetry(RetryPolicy<I> retryPolicy);
 
-    NodeBuilder<I, O> withMaxRetries(int maxRetries);
+    NodeBuilder<I, O> withMaxAttempts(int maxAttempts);
 
     NodeBuilder<I, O> withExecutor(ExecutorService executorService);
 
+    NodeBuilder<I, O> withThreadExecutor(int numThreads);
+
+    NodeBuilder<I, O> withThreadExecutor(int numThreads, ThreadFactory threadFactory);
+
     NodeBuilder<I, O> withQueue(HQueue<I> queue);
-    
+
     Node<I, O> build();
 }

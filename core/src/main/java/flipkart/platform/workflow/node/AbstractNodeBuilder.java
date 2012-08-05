@@ -1,29 +1,34 @@
-package flipkart.platform.node.builder;
+package flipkart.platform.workflow.node;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import com.google.common.util.concurrent.MoreExecutors;
 import flipkart.platform.workflow.link.DefaultLink;
 import flipkart.platform.workflow.link.Link;
 import flipkart.platform.workflow.link.Selector;
-import flipkart.platform.workflow.node.Node;
-import flipkart.platform.workflow.node.RetryPolicy;
 import flipkart.platform.workflow.queue.ConcurrentQueue;
 import flipkart.platform.workflow.queue.HQueue;
 import flipkart.platform.workflow.utils.DefaultRetryPolicy;
+import flipkart.platform.workflow.utils.JobThreadFactory;
 import flipkart.platform.workflow.utils.NoRetryPolicy;
 
 /**
  * User: shashwat
  * Date: 03/08/12
  */
-public abstract class AbstractNodeBuilder<I, O> implements WSNodeBuilder<I, O>
+public abstract class AbstractNodeBuilder<I, O> implements NodeBuilder<I,O>
 {
     protected String name = "";
     protected Link<O> link = new DefaultLink<O>();
     protected RetryPolicy<I> retryPolicy = new NoRetryPolicy<I>();
     protected ExecutorService executorService = MoreExecutors.sameThreadExecutor();
-    protected int numThreads = 3;
     protected HQueue<I> queue = new ConcurrentQueue<I>();
+
+    public AbstractNodeBuilder(String name)
+    {
+        this.name = name;
+    }
 
     @Override
     public NodeBuilder<I, O> withName(String name)
@@ -53,9 +58,9 @@ public abstract class AbstractNodeBuilder<I, O> implements WSNodeBuilder<I, O>
     }
 
     @Override
-    public NodeBuilder<I, O> withMaxRetries(int maxRetries)
+    public NodeBuilder<I, O> withMaxAttempts(int maxAttempts)
     {
-        return withRetry(new DefaultRetryPolicy<I>(maxRetries));
+        return withRetry(new DefaultRetryPolicy<I>(maxAttempts));
     }
 
     @Override
@@ -66,10 +71,15 @@ public abstract class AbstractNodeBuilder<I, O> implements WSNodeBuilder<I, O>
     }
 
     @Override
-    public WSNodeBuilder<I, O> withNumThreads(int numThreads)
+    public NodeBuilder<I, O> withThreadExecutor(int numThreads)
     {
-        this.numThreads = numThreads;
-        return this;
+        return withExecutor(Executors.newFixedThreadPool(numThreads, new JobThreadFactory(name)));
+    }
+
+    @Override
+    public NodeBuilder<I, O> withThreadExecutor(int numThreads, ThreadFactory threadFactory)
+    {
+        return withExecutor(Executors.newFixedThreadPool(numThreads, threadFactory));
     }
 
     @Override

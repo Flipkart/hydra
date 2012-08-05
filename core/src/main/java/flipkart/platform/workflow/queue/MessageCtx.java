@@ -6,14 +6,9 @@ package flipkart.platform.workflow.queue;
  */
 public interface MessageCtx<I>
 {
-    enum State
-    {
-        NEW, ACK, RETRY, DISCARD
-    }
-
     enum DiscardAction
     {
-        ENQUEUE, SIDELINE, REJECT
+        ENQUEUE, REJECT
     }
 
     boolean ack();

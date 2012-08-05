@@ -6,6 +6,7 @@ import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.link.Link;
 import flipkart.platform.workflow.queue.HQueue;
 import flipkart.platform.workflow.queue.MessageCtx;
+import flipkart.platform.workflow.utils.NoRetryPolicy;
 
 /**
  * User: shashwat
@@ -15,7 +16,7 @@ public class BasicNode<I, O> extends AbstractNode<I, O, BasicJob<I, O>>
 {
     public BasicNode(String name, HQueue<I> queue, JobFactory<? extends BasicJob<I, O>> jobFactory, Link<O> link)
     {
-        super(name, queue, MoreExecutors.sameThreadExecutor(), jobFactory, link);
+        super(name, MoreExecutors.sameThreadExecutor(), queue, new NoRetryPolicy<I>(),jobFactory, link);
     }
 
     @Override

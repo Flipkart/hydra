@@ -1,13 +1,17 @@
 package flipkart.platform.workflow.node;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import com.sun.xml.internal.ws.api.message.Message;
 import com.yammer.metrics.annotation.Timed;
+import flipkart.platform.workflow.job.ExecutionFailureException;
 import flipkart.platform.workflow.job.Job;
 import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.job.JobObjectFactory;
 import flipkart.platform.workflow.link.Link;
 import flipkart.platform.workflow.queue.HQueue;
+import flipkart.platform.workflow.queue.MessageCtx;
 import flipkart.platform.workflow.utils.RefCounter;
 import flipkart.platform.workflow.utils.ThreadLocalRepository;
 
@@ -33,6 +37,7 @@ public abstract class AbstractNode<I, O, J extends Job<I>> implements Node<I, O>
     protected final HQueue<I> queue;
 
     private final ExecutorService executorService;
+    private final RetryPolicy<I> retryPolicy;
     protected final Link<O> link;
     private final ThreadLocalRepository<J> threadLocalJobRepository;
     private final String name;
@@ -40,18 +45,33 @@ public abstract class AbstractNode<I, O, J extends Job<I>> implements Node<I, O>
     private volatile RunState state = RunState.ACTIVE;
     private final RefCounter activeWorkers = new RefCounter(0);
 
-    protected AbstractNode(String name, HQueue<I> queue, ExecutorService executorService,
+    protected AbstractNode(String name, ExecutorService executorService, HQueue<I> queue, RetryPolicy<I> retryPolicy,
         JobFactory<? extends J> jobFactory, Link<O> link)
     {
         this.name = name;
 
         this.queue = queue;
         this.executorService = executorService;
+        this.retryPolicy = retryPolicy;
         this.link = link;
         //this.threadPool = new ThreadPoolExecutor(numThreads, numThreads, 0,
         //    TimeUnit.MICROSECONDS, new LinkedBlockingQueue<Runnable>(), jobThreadFactory);
         this.threadLocalJobRepository = ThreadLocalRepository.from(JobObjectFactory.from(jobFactory));
+
     }
+
+    //protected AbstractNode(String name, HQueue<I> queue, ExecutorService executorService,
+    //    JobFactory<? extends J> jobFactory, Link<O> link)
+    //{
+    //    this.name = name;
+    //
+    //    this.queue = queue;
+    //    this.executorService = executorService;
+    //    this.link = link;
+    //    //this.threadPool = new ThreadPoolExecutor(numThreads, numThreads, 0,
+    //    //    TimeUnit.MICROSECONDS, new LinkedBlockingQueue<Runnable>(), jobThreadFactory);
+    //    this.threadLocalJobRepository = ThreadLocalRepository.from(JobObjectFactory.from(jobFactory));
+    //}
 
     @Override
     public String getName()
@@ -119,7 +139,7 @@ public abstract class AbstractNode<I, O, J extends Job<I>> implements Node<I, O>
     {
         link.forward(o);
     }
-    
+
     protected abstract void scheduleWorker();
 
     public abstract class WorkerBase implements Runnable
@@ -128,10 +148,13 @@ public abstract class AbstractNode<I, O, J extends Job<I>> implements Node<I, O>
         public void run()
         {
             activeWorkers.offer();
+            final J j = threadLocalJobRepository.get();
             try
             {
-                final J j = threadLocalJobRepository.get();
-                execute(j);
+                if (j != null)
+                {
+                    execute(j);
+                }
             }
             finally
             {
@@ -145,6 +168,22 @@ public abstract class AbstractNode<I, O, J extends Job<I>> implements Node<I, O>
         }
 
         protected abstract void execute(J j);
+
+        protected void retryMessage(J j, MessageCtx<I> messageCtx, Throwable t)
+        {
+            if (!retryPolicy.retry(AbstractNode.this, messageCtx))
+            {
+                discardMessage(j, messageCtx, t);
+            }
+            // TODO: log
+        }
+
+        protected void discardMessage(J j, MessageCtx<I> messageCtx, Throwable t)
+        {
+            // TODO: log
+            messageCtx.discard(MessageCtx.DiscardAction.REJECT);
+            j.failed(messageCtx.get(), t);
+        }
     }
 
 }

@@ -1,28 +1,28 @@
 package flipkart.platform.node.workstation;
 
 import java.util.Collection;
+import java.util.concurrent.ExecutorService;
 import flipkart.platform.node.jobs.OneToManyJob;
 import flipkart.platform.workflow.job.ExecutionFailureException;
 import flipkart.platform.workflow.job.JobFactory;
 import flipkart.platform.workflow.link.Link;
+import flipkart.platform.workflow.node.AbstractNode;
 import flipkart.platform.workflow.node.RetryPolicy;
-import flipkart.platform.workflow.queue.ConcurrentQueue;
-import flipkart.platform.workflow.queue.MessageCtx;
 import flipkart.platform.workflow.queue.HQueue;
-import flipkart.platform.workflow.utils.DefaultRetryPolicy;
+import flipkart.platform.workflow.queue.MessageCtx;
 
 /**
- * A {@link flipkart.platform.node.workstation.WorkStation} that executes {@link flipkart.platform.workflow.job
+ * A {@link AbstractNode} that executes {@link flipkart.platform.workflow.job
  * .OneToManyJob}
  *
  * @author shashwat
  */
-public class OneToManyWorkStation<I, O> extends WorkStation<I, O, OneToManyJob<I, O>>
+public class OneToManyWorkStation<I, O> extends AbstractNode<I, O, OneToManyJob<I, O>>
 {
-    public OneToManyWorkStation(String name, int numThreads, HQueue<I> queue, RetryPolicy<I> retryPolicy,
+    public OneToManyWorkStation(String name, ExecutorService executorService, HQueue<I> queue, RetryPolicy<I> retryPolicy,
         JobFactory<? extends OneToManyJob<I, O>> jobFactory, Link<O> oLink)
     {
-        super(name, numThreads, queue, retryPolicy, jobFactory, oLink);
+        super(name, executorService, queue, retryPolicy, jobFactory, oLink);
     }
 
     @Override
@@ -36,41 +36,33 @@ public class OneToManyWorkStation<I, O> extends WorkStation<I, O, OneToManyJob<I
         @Override
         protected void execute(OneToManyJob<I, O> job)
         {
-            final MessageCtx<I> e = queue.read();
-            final I i = e.get();
+            final MessageCtx<I> messageCtx = queue.read();
+            final I i = messageCtx.get();
             try
             {
                 try
                 {
                     final Collection<O> list = job.execute(i);
-
-                    for (final O o : list)
-                    {
-                        sendForward(o);
-                    }
-                    e.ack();
+                    ackMessage(messageCtx, list);
                 }
                 catch (ExecutionFailureException ex)
                 {
-                    if (!retryPolicy.retry(OneToManyWorkStation.this, e))
-                    {
-                        throw new ExecutionFailureException("No more retries after exception: " + ex.getMessage(), ex);
-                    }
+                    retryMessage(job, messageCtx, ex);
                 }
             }
             catch (Exception ex)
             {
-                job.failed(i, ex);
-                e.discard(MessageCtx.DiscardAction.ENQUEUE);
+                discardMessage(job, messageCtx, ex);
             }
         }
-    }
 
-    public static <I, O> OneToManyWorkStation<I, O> create(String name,
-        int numThreads, int maxAttempts,
-        JobFactory<? extends OneToManyJob<I, O>> jobFactory, Link<O> link)
-    {
-        return new OneToManyWorkStation<I, O>(name, numThreads, new ConcurrentQueue<I>(),
-            new DefaultRetryPolicy<I>(maxAttempts), jobFactory, link);
+        private void ackMessage(MessageCtx<I> messageCtx, Collection<O> list)
+        {
+            for (final O o : list)
+            {
+                sendForward(o);
+            }
+            messageCtx.ack();
+        }
     }
 }

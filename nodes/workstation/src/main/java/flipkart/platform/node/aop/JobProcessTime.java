@@ -6,7 +6,7 @@ import com.yammer.metrics.annotation.Timed;
 import com.yammer.metrics.core.MetricName;
 import com.yammer.metrics.core.Timer;
 import com.yammer.metrics.core.TimerContext;
-import flipkart.platform.node.workstation.WorkStation;
+import flipkart.platform.workflow.node.AbstractNode;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -21,7 +21,7 @@ public class JobProcessTime
     // TODO: Add shutdown hook to shutdown metrics
 
     @Around("target(worker) && execution(@com.yammer.metrics.annotation.Timed * * (..)) && @annotation(annotation)")
-    public Object measureExecTime(ProceedingJoinPoint thisJoinPoint, WorkStation.WorkerBase worker,
+    public Object measureExecTime(ProceedingJoinPoint thisJoinPoint, AbstractNode.WorkerBase worker,
         Timed annotation) throws
         Throwable
     {
