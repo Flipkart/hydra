@@ -8,9 +8,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import flipkart.platform.node.builder.WSBuilder;
 import flipkart.platform.node.jobs.ManyToManyJob;
 import flipkart.platform.node.jobs.OneToOneJob;
-import flipkart.platform.workflow.link.Selector;
-import flipkart.platform.workflow.node.Node;
-import flipkart.platform.workflow.utils.UnModifiableMap;
+import flipkart.platform.hydra.link.Selector;
+import flipkart.platform.hydra.node.Node;
+import flipkart.platform.hydra.utils.UnModifiableMap;
 
 public class Showcase
 {

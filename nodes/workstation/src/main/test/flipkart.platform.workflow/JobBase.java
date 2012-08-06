@@ -1,7 +1,7 @@
 package flipkart.platform.workflow;
 
 import flipkart.platform.hydra.traits.Initializable;
-import flipkart.platform.workflow.job.Job;
+import flipkart.platform.hydra.job.Job;
 
 public class JobBase<I> implements Job<I>, Initializable
 {
