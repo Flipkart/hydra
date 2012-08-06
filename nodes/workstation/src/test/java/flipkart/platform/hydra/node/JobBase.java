@@ -1,4 +1,4 @@
-package flipkart.platform.workflow;
+package flipkart.platform.hydra.node;
 
 import flipkart.platform.hydra.traits.Initializable;
 import flipkart.platform.hydra.job.Job;

@@ -1,15 +1,14 @@
-package flipkart.platform.workflow;
+package flipkart.platform.hydra.node;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import flipkart.platform.node.builder.WSBuilder;
-import flipkart.platform.node.jobs.ManyToManyJob;
-import flipkart.platform.node.jobs.OneToOneJob;
+import flipkart.platform.hydra.jobs.ManyToManyJob;
+import flipkart.platform.hydra.jobs.OneToOneJob;
 import flipkart.platform.hydra.link.Selector;
-import flipkart.platform.hydra.node.Node;
+import flipkart.platform.hydra.node.builder.WSBuilder;
 import flipkart.platform.hydra.utils.UnModifiableMap;
 
 public class Showcase
