@@ -20,4 +20,11 @@ public interface MessageCtx<I>
     I get();
 
     int getAttempt();
+
+    /**
+     * Timestamp when this message was enqueue into the queue. This is true for each retry as well.
+     * @return Long timestamp
+     */
+    long getCreatedTimestamp();
+
 }

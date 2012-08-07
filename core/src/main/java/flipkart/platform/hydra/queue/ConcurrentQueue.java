@@ -67,6 +67,7 @@ public class ConcurrentQueue<I> implements HQueue<I>
     {
         private final I i;
         private final int attempt;
+        private final long enqueueTimestamp;
 
         public SimpleMessageCtx(I i)
         {
@@ -77,6 +78,7 @@ public class ConcurrentQueue<I> implements HQueue<I>
         {
             this.i = i;
             this.attempt = attempt;
+            this.enqueueTimestamp = System.currentTimeMillis();
         }
 
         @Override
@@ -115,6 +117,12 @@ public class ConcurrentQueue<I> implements HQueue<I>
         public int getAttempt()
         {
             return attempt;
+        }
+
+        @Override
+        public long getCreatedTimestamp()
+        {
+            return enqueueTimestamp;
         }
     }
 

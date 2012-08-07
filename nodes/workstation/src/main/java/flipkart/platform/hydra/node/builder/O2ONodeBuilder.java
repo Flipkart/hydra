@@ -22,6 +22,6 @@ public class O2ONodeBuilder<I, O> extends AbstractNodeBuilder<I, O>
     @Override
     public Node<I, O> build()
     {
-        return new OneToOneWorkStation<I, O>(name, executorService, queue, retryPolicy, jobFactory, link);
+        return new OneToOneWorkStation<I, O>(name, executorService, queue, retryPolicy, jobFactory);
     }
 }

@@ -6,10 +6,10 @@ import flipkart.platform.hydra.node.Node;
  * Link is an interface that defines how two {@link Node}s are connected with
  * each other.
  *
- * @param <I>
+ * @param <T> Object type that needs to be transferred between nodes
  * @author shashwat
  */
-public interface Link<I>
+public interface Link<T>
 {
     /**
      * Attach given node to it's end
@@ -17,7 +17,15 @@ public interface Link<I>
      * @param node
      *     {@link Node} to be attached
      */
-    public void append(Node<I, ?> node);
+    public <O> void addConsumer(Node<T, O> node);
+
+    /**
+    * Attach given node to it's beginning
+    *
+    * @param node
+    *     {@link Node} to be attached
+    */
+    public <I> void addProducer(Node<I, T> node);
 
     /**
      * Indicates if the link is the terminal, i.e., there are no nodes appended at the end of this link
@@ -26,25 +34,4 @@ public interface Link<I>
      *         <code>false</code> otherwise
      */
     public boolean isTerminal();
-
-    /**
-     * Forward job to the attached nodes
-     *
-     * @param i
-     *     Job description
-     * @return <code>true</code>, if the message was actually forwarded to a node;
-     *         <code>false</code> otherwise
-     *
-     */
-    public boolean forward(I i);
-
-    /**
-     * Sends shutdown to the attached nodes.
-     *
-     * @param awaitTermination
-     *     if <code>true</code>, awaits until all nodes are shutdown. Set
-     *     to <code>false</code> to return immediately
-     * @throws InterruptedException if thread is interrupted
-     */
-    public void sendShutdown(boolean awaitTermination) throws InterruptedException;
 }

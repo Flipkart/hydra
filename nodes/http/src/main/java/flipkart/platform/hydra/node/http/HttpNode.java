@@ -5,7 +5,6 @@ import java.util.concurrent.ExecutorService;
 import com.ning.http.client.*;
 import flipkart.platform.hydra.job.JobFactory;
 import flipkart.platform.hydra.jobs.HttpJob;
-import flipkart.platform.hydra.link.Link;
 import flipkart.platform.hydra.node.AbstractNode;
 import flipkart.platform.hydra.node.RetryPolicy;
 import flipkart.platform.hydra.queue.HQueue;
@@ -20,9 +19,9 @@ public class HttpNode<I, O> extends AbstractNode<I, O, HttpJob<I, O>>
     private final AsyncHttpClient client;
 
     public HttpNode(String name, ExecutorService executorService, HQueue<I> queue, HttpNodeConfiguration config,
-        JobFactory<? extends HttpJob<I, O>> httpJobFactory, RetryPolicy<I> retryPolicy, Link<O> link)
+        JobFactory<? extends HttpJob<I, O>> httpJobFactory, RetryPolicy<I> retryPolicy)
     {
-        super(name, executorService, queue, retryPolicy, httpJobFactory, link);
+        super(name, executorService, queue, retryPolicy, httpJobFactory);
 
         client = new AsyncHttpClient(new AsyncHttpClientConfig.Builder()
             .setConnectionTimeoutInMs((int) config.getConnectionTimeoutInMs())

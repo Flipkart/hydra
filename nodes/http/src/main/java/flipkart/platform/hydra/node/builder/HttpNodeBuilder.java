@@ -64,6 +64,6 @@ public class HttpNodeBuilder<I, O> extends AbstractNodeBuilder<I, O>
         final HttpNodeConfiguration configuration =
             new HttpNodeConfiguration(connectionTimeoutInMs, requestTimeoutInMs, followRedirects,
                 maximumNumberOfRedirects);
-        return new HttpNode<I, O>(name, executorService, queue, configuration, jobFactory, retryPolicy, link);
+        return new HttpNode<I, O>(name, executorService, queue, configuration, jobFactory, retryPolicy);
     }
 }

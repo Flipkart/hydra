@@ -7,7 +7,6 @@ import java.util.concurrent.ExecutorService;
 import flipkart.platform.hydra.job.ExecutionFailureException;
 import flipkart.platform.hydra.job.JobFactory;
 import flipkart.platform.hydra.jobs.ManyToManyJob;
-import flipkart.platform.hydra.link.Link;
 import flipkart.platform.hydra.node.AbstractNode;
 import flipkart.platform.hydra.node.RetryPolicy;
 import flipkart.platform.hydra.queue.HQueue;
@@ -34,9 +33,9 @@ public class ManyToManyWorkStation<I, O> extends AbstractNode<I, O, ManyToManyJo
     private final SchedulerThread schedulerThread = new SchedulerThread();
 
     public ManyToManyWorkStation(String name, ExecutorService executorService, HQueue<I> queue, RetryPolicy<I> retryPolicy,
-        JobFactory<? extends ManyToManyJob<I, O>> jobFactory, Link<O> oLink, int maxJobsToGroup, long maxDelayMs)
+        JobFactory<? extends ManyToManyJob<I, O>> jobFactory, int maxJobsToGroup, long maxDelayMs)
     {
-        super(name, executorService, queue, retryPolicy, jobFactory, oLink);
+        super(name, executorService, queue, retryPolicy, jobFactory);
         if (maxJobsToGroup <= 1 || maxDelayMs < 0)
         {
             throw new IllegalArgumentException("Illegal int arguments to: " + getClass().getSimpleName());

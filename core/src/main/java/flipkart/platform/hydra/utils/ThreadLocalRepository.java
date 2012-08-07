@@ -68,7 +68,6 @@ public class ThreadLocalRepository<T>
         return null;
     }
 
-    // TODO: do we need this
     void remove()
     {
         threadLocal.remove();

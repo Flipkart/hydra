@@ -1,5 +1,7 @@
 package flipkart.platform.hydra.node;
 
+import flipkart.platform.hydra.link.Link;
+
 /**
  * A workflow node that accepts jobs, executes them and forwards their results
  * to other nodes down the workflow if available.
@@ -21,15 +23,7 @@ public interface Node<I, O>
      */
     public String getName();
 
-    /**
-     * Append given node to this node. Once a node is appended, it cannot be
-     * detached. Also, no nodes should be appended once the execution has
-     * started. Has weak thread safety guarantees.
-     * 
-     * @param node
-     *            {@link Node} to append
-     */
-    public void append(Node<O, ?> node);
+    public void addListener(NodeEventListener<O> nodeListener);
 
     /**
      * Accept a job description that will be eventually executed.

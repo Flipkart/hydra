@@ -1,8 +1,6 @@
 package flipkart.platform.hydra.link;
 
 import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import flipkart.platform.hydra.node.Node;
 import flipkart.platform.hydra.utils.UnModifiableMap;
 
@@ -12,16 +10,15 @@ import flipkart.platform.hydra.utils.UnModifiableMap;
  *
  * @author shashwat
  */
-public class DefaultLink<T> implements Link<T>
+public class DefaultLink<T> extends AbstractLink<T>
 {
-    protected final Map<String, Node<T, ?>> nodes = new ConcurrentHashMap<String, Node<T, ?>>();
     private final Selector<T> selector;
 
     public static <T> DefaultLink<T> from(Selector<T> selector)
     {
         return new DefaultLink<T>(selector);
     }
-    
+
     public DefaultLink()
     {
         this(new DefaultSelector<T>());
@@ -32,25 +29,10 @@ public class DefaultLink<T> implements Link<T>
         this.selector = selector;
     }
 
-    public void append(Node<T, ?> node)
-    {
-        if (node == null)
-        {
-            throw new IllegalArgumentException("input cannot be null!");
-        }
-        nodes.put(node.getName(), node);
-    }
-
-    @Override
-    public boolean isTerminal()
-    {
-        return nodes.isEmpty();
-    }
-
     public boolean forward(T i)
     {
         int count = 0;
-        final Collection<Node<T, ?>> selectedNodes = selector.select(i, UnModifiableMap.from(nodes));
+        final Collection<Node<T, ?>> selectedNodes = selector.select(i, UnModifiableMap.from(consumerNodes));
 
         if (selectedNodes != null && !selectedNodes.isEmpty())
         {
@@ -67,14 +49,6 @@ public class DefaultLink<T> implements Link<T>
         return (count > 0);
     }
 
-    public void sendShutdown(boolean awaitTermination)
-        throws InterruptedException
-    {
-        for (Node<T, ?> node : nodes.values())
-        {
-            node.shutdown(awaitTermination);
-        }
-    }
 
     private static class DefaultSelector<T> implements Selector<T>
     {

@@ -1,12 +1,14 @@
 package flipkart.platform.hydra.node;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import com.google.common.collect.Lists;
 import com.yammer.metrics.annotation.Timed;
 import flipkart.platform.hydra.job.Job;
 import flipkart.platform.hydra.job.JobFactory;
 import flipkart.platform.hydra.job.JobObjectFactory;
-import flipkart.platform.hydra.link.Link;
 import flipkart.platform.hydra.queue.HQueue;
 import flipkart.platform.hydra.queue.MessageCtx;
 import flipkart.platform.hydra.utils.RefCounter;
@@ -35,40 +37,25 @@ public abstract class AbstractNode<I, O, J extends Job<I>> implements Node<I, O>
 
     private final ExecutorService executorService;
     private final RetryPolicy<I> retryPolicy;
-    protected final Link<O> link;
     private final ThreadLocalRepository<J> threadLocalJobRepository;
     private final String name;
 
-    private volatile RunState state = RunState.ACTIVE;
+    private final AtomicReference<RunState> state = new AtomicReference<RunState>(RunState.ACTIVE);
     private final RefCounter activeWorkers = new RefCounter(0);
 
+    private final List<NodeEventListener<O>> eventListeners = Lists.newLinkedList();
+
     protected AbstractNode(String name, ExecutorService executorService, HQueue<I> queue, RetryPolicy<I> retryPolicy,
-        JobFactory<? extends J> jobFactory, Link<O> link)
+        JobFactory<? extends J> jobFactory)
     {
         this.name = name;
 
         this.queue = queue;
         this.executorService = executorService;
         this.retryPolicy = retryPolicy;
-        this.link = link;
-        //this.threadPool = new ThreadPoolExecutor(numThreads, numThreads, 0,
-        //    TimeUnit.MICROSECONDS, new LinkedBlockingQueue<Runnable>(), jobThreadFactory);
+
         this.threadLocalJobRepository = ThreadLocalRepository.from(JobObjectFactory.from(jobFactory));
-
     }
-
-    //protected AbstractNode(String name, HQueue<I> queue, ExecutorService executorService,
-    //    JobFactory<? extends J> jobFactory, Link<O> link)
-    //{
-    //    this.name = name;
-    //
-    //    this.queue = queue;
-    //    this.executorService = executorService;
-    //    this.link = link;
-    //    //this.threadPool = new ThreadPoolExecutor(numThreads, numThreads, 0,
-    //    //    TimeUnit.MICROSECONDS, new LinkedBlockingQueue<Runnable>(), jobThreadFactory);
-    //    this.threadLocalJobRepository = ThreadLocalRepository.from(JobObjectFactory.from(jobFactory));
-    //}
 
     @Override
     public String getName()
@@ -77,43 +64,47 @@ public abstract class AbstractNode<I, O, J extends Job<I>> implements Node<I, O>
     }
 
     @Override
-    public void append(Node<O, ?> node)
+    public void addListener(NodeEventListener<O> nodeListener)
     {
-        link.append(node);
+        eventListeners.add(nodeListener);
     }
 
     @Override
     public void accept(I i)
     {
-        if (state == RunState.ACTIVE)
-        {
-            queue.enqueue(i);
-            scheduleWorker();
-        }
-        else
-        {
-            throw new RuntimeException("accept() called after shutdown()");
-        }
-    }
+        validateState();
 
-    @Override
-    public final void shutdown(boolean awaitTermination) throws InterruptedException
-    {
-        state = RunState.SHUTTING_DOWN;
-
-        // loop and check if there are no jobs in the queue and no workers executing any job
-        while (awaitTermination && !isDone())
-        {
-            Thread.sleep(10);
-        }
-
-        shutdownResources(awaitTermination);
-        state = RunState.SHUTDOWN;
+        queue.enqueue(i);
+        scheduleWorker();
     }
 
     public boolean isDone()
     {
         return (queue.isEmpty() && activeWorkers.isZero());
+    }
+
+    @Override
+    public final void shutdown(boolean awaitTermination) throws InterruptedException
+    {
+        if (state.compareAndSet(RunState.ACTIVE, RunState.SHUTTING_DOWN))
+        {
+            // loop and check if there are no jobs in the queue and no workers executing any job
+            while (awaitTermination && !isDone())
+            {
+                Thread.sleep(10);
+            }
+
+            shutdownResources(awaitTermination);
+            state.set(RunState.SHUTDOWN);
+            for (NodeEventListener<O> eventListener : eventListeners)
+            {
+                eventListener.onShutdown(this, awaitTermination);
+            }
+        }
+        else
+        {
+            throw new RuntimeException("Shutdown already in progress");
+        }
     }
 
     protected void executeWorker(WorkerBase worker)
@@ -129,17 +120,21 @@ public abstract class AbstractNode<I, O, J extends Job<I>> implements Node<I, O>
             ;
 
         threadLocalJobRepository.close();
-        link.sendShutdown(awaitTermination);
+
+        // TODO: send shutdown
     }
 
-    protected void sendForward(O o)
+    protected final void validateState()
     {
-        link.forward(o);
+        if (state.get() != RunState.ACTIVE)
+        {
+            throw new RuntimeException("accept() called after shutdown()");
+        }
     }
 
     protected abstract void scheduleWorker();
 
-    public abstract class WorkerBase implements Runnable
+    public abstract class WorkerBase implements Runnable, JobContext<I, O, J>
     {
         @Timed
         public void run()
@@ -166,7 +161,15 @@ public abstract class AbstractNode<I, O, J extends Job<I>> implements Node<I, O>
 
         protected abstract void execute(J j);
 
-        protected void retryMessage(J j, MessageCtx<I> messageCtx, Throwable t)
+        public void sendForward(O o)
+        {
+            for (NodeEventListener<O> eventListener : eventListeners)
+            {
+                eventListener.forward(o);
+            }
+        }
+
+        public void retryMessage(J j, MessageCtx<I> messageCtx, Throwable t)
         {
             if (!retryPolicy.retry(AbstractNode.this, messageCtx))
             {
@@ -175,7 +178,7 @@ public abstract class AbstractNode<I, O, J extends Job<I>> implements Node<I, O>
             // TODO: log
         }
 
-        protected void discardMessage(J j, MessageCtx<I> messageCtx, Throwable t)
+        public void discardMessage(J j, MessageCtx<I> messageCtx, Throwable t)
         {
             // TODO: log
             messageCtx.discard(MessageCtx.DiscardAction.REJECT);

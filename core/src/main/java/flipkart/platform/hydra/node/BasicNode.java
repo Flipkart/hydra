@@ -14,9 +14,9 @@ import flipkart.platform.hydra.utils.NoRetryPolicy;
  */
 public class BasicNode<I, O> extends AbstractNode<I, O, BasicJob<I, O>>
 {
-    public BasicNode(String name, HQueue<I> queue, JobFactory<? extends BasicJob<I, O>> jobFactory, Link<O> link)
+    public BasicNode(String name, HQueue<I> queue, JobFactory<? extends BasicJob<I, O>> jobFactory)
     {
-        super(name, MoreExecutors.sameThreadExecutor(), queue, new NoRetryPolicy<I>(),jobFactory, link);
+        super(name, MoreExecutors.sameThreadExecutor(), queue, new NoRetryPolicy<I>(), jobFactory);
     }
 
     @Override
@@ -28,7 +28,7 @@ public class BasicNode<I, O> extends AbstractNode<I, O, BasicJob<I, O>>
             protected void execute(BasicJob<I, O> job)
             {
                 final MessageCtx<I> messageCtx = queue.read();
-                job.execute(messageCtx.get(), BasicNode.this, BasicNode.this.link);
+                job.execute(messageCtx.get(), this);
                 messageCtx.ack();
             }
         });

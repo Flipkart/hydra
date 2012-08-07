@@ -31,7 +31,7 @@ public class M2MNodeBuilder<I, O> extends AbstractNodeBuilder<I, O>
     @Override
     public Node<I, O> build()
     {
-        return new ManyToManyWorkStation<I, O>(name, executorService, queue, retryPolicy, jobFactory, link,
+        return new ManyToManyWorkStation<I, O>(name, executorService, queue, retryPolicy, jobFactory,
             maxJobsToGroup, maxDelayMs);
     }
 }

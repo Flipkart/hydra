@@ -11,6 +11,9 @@ import flipkart.platform.hydra.link.Selector;
 import flipkart.platform.hydra.node.builder.WSBuilder;
 import flipkart.platform.hydra.utils.UnModifiableMap;
 
+import static flipkart.platform.hydra.link.LinkBuilder.link;
+import static flipkart.platform.hydra.link.LinkBuilder.using;
+
 public class Showcase
 {
     public static class Job1 extends JobBase<String> implements
@@ -108,14 +111,11 @@ public class Showcase
                 WSBuilder.withO2OJob(Job2.class).withMaxAttempts(2).withSelector(new MySelector())
                     .build();
 
-            ws1.append(wsM);
-            wsM.append(ws2);
-
             final Node<String, Void> evenNode = WSBuilder.withO2OJob(EvenJob.class).build();
             final Node<String, Void> oddNode = WSBuilder.withO2OJob(OddJob.class).build();
 
-            ws2.append(evenNode);
-            ws2.append(oddNode);
+            link(ws1).to(wsM).to(ws2);
+            using(new MySelector()).linkFrom(ws2).to(evenNode, oddNode);
 
             final long start = System.nanoTime();
             for (int i = 1; i <= 100; ++i)

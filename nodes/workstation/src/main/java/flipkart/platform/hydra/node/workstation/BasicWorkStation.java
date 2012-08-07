@@ -3,7 +3,6 @@ package flipkart.platform.hydra.node.workstation;
 import java.util.concurrent.ExecutorService;
 import flipkart.platform.hydra.job.BasicJob;
 import flipkart.platform.hydra.job.JobFactory;
-import flipkart.platform.hydra.link.Link;
 import flipkart.platform.hydra.node.AbstractNode;
 import flipkart.platform.hydra.queue.HQueue;
 import flipkart.platform.hydra.queue.MessageCtx;
@@ -18,9 +17,9 @@ import flipkart.platform.hydra.utils.NoRetryPolicy;
 public class BasicWorkStation<I, O> extends AbstractNode<I, O, BasicJob<I, O>>
 {
     public BasicWorkStation(String name, ExecutorService executorService, HQueue<I> queue,
-        JobFactory<? extends BasicJob<I, O>> basicJobJobFactory, Link<O> oLink)
+        JobFactory<? extends BasicJob<I, O>> basicJobJobFactory)
     {
-        super(name, executorService, queue, new NoRetryPolicy<I>(), basicJobJobFactory, oLink);
+        super(name, executorService, queue, new NoRetryPolicy<I>(), basicJobJobFactory);
     }
 
     @Override
@@ -38,7 +37,7 @@ public class BasicWorkStation<I, O> extends AbstractNode<I, O, BasicJob<I, O>>
             final I i = messageCtx.get();
             try
             {
-                job.execute(i, BasicWorkStation.this, link);
+                job.execute(i, this);
                 messageCtx.ack();
             }
             catch (Exception ex)
