@@ -9,10 +9,10 @@ import flipkart.platform.hydra.node.NodeEventListener;
  * User: shashwat
  * Date: 07/08/12
  */
-public abstract class AbstractLink<T> implements Link<T>
+public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
 {
-    protected final ConcurrentMap<String, Node<T, ?>> consumerNodes = new ConcurrentHashMap<String, Node<T, ?>>();
-    protected final ConcurrentMap<String, Node<?, T>> producerNodes = new ConcurrentHashMap<String, Node<?, T>>();
+    protected final ConcurrentMap<String, Node<T2, ?>> consumerNodes = new ConcurrentHashMap<String, Node<T2, ?>>();
+    protected final ConcurrentMap<String, Node<?, T1>> producerNodes = new ConcurrentHashMap<String, Node<?, T1>>();
 
     private enum RunState
     {
@@ -21,7 +21,7 @@ public abstract class AbstractLink<T> implements Link<T>
 
     private volatile RunState runState = RunState.ACTIVE;
 
-    public <O> void addConsumer(Node<T, O> node)
+    public <O> void addConsumer(Node<T2, O> node)
     {
         if (valid(node))
         {
@@ -31,7 +31,7 @@ public abstract class AbstractLink<T> implements Link<T>
     }
 
     @Override
-    public <I> void addProducer(Node<I, T> node)
+    public <I> void addProducer(Node<I, T1> node)
     {
         if (valid(node))
         {
@@ -52,7 +52,7 @@ public abstract class AbstractLink<T> implements Link<T>
         {
             runState = RunState.SHUTTING_DOWN;
 
-            for (Node<T, ?> node : consumerNodes.values())
+            for (Node<?, ?> node : consumerNodes.values())
             {
                 node.shutdown(awaitTermination);
             }
@@ -60,14 +60,14 @@ public abstract class AbstractLink<T> implements Link<T>
         }
     }
 
-    protected abstract boolean forward(T t);
+    protected abstract boolean forward(T1 t);
 
-    private void removeConsumer(Node<T, ?> node)
+    private void removeConsumer(Node<T2, ?> node)
     {
         consumerNodes.remove(node.getName());
     }
 
-    private void removeProducer(Node<?, T> node)
+    private void removeProducer(Node<?, T1> node)
     {
         producerNodes.remove(node.getName());
     }
@@ -90,16 +90,16 @@ public abstract class AbstractLink<T> implements Link<T>
     /**
      *
      */
-    private class ProducerNodeListener implements NodeEventListener<T>
+    private class ProducerNodeListener implements NodeEventListener<T1>
     {
         @Override
-        public void forward(T t)
+        public void forward(T1 t)
         {
             AbstractLink.this.forward(t);
         }
 
         @Override
-        public void onShutdown(Node<?, T> node, boolean awaitTermination) throws InterruptedException
+        public void onShutdown(Node<?, T1> node, boolean awaitTermination) throws InterruptedException
         {
             AbstractLink.this.removeProducer(node);
             AbstractLink.this.tryShutdown(awaitTermination);
@@ -120,8 +120,7 @@ public abstract class AbstractLink<T> implements Link<T>
         @SuppressWarnings("unchecked")
         public void onShutdown(Node<?, O> node, boolean awaitTermination) throws InterruptedException
         {
-            AbstractLink.this.removeConsumer((Node<T, ?>) node);
+            AbstractLink.this.removeConsumer((Node<T2, ?>) node);
         }
-    }
-
+    }    
 }

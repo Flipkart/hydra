@@ -10,7 +10,7 @@ import flipkart.platform.hydra.utils.UnModifiableMap;
  *
  * @author shashwat
  */
-public class DefaultLink<T> extends AbstractLink<T>
+public class DefaultLink<T> extends AbstractLink<T, T> implements Link<T>
 {
     private final Selector<T> selector;
 
