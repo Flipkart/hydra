@@ -6,7 +6,7 @@ package flipkart.platform.hydra.node;
  */
 public interface NodeEventListener<T>
 {
-    public void forward(T i);
+    public void onNewMessage(T i);
 
     public void onShutdown(Node<?, T> node, boolean awaitTermination) throws InterruptedException;
 }

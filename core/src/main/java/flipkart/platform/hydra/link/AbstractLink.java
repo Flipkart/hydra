@@ -1,9 +1,11 @@
 package flipkart.platform.hydra.link;
 
+import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import flipkart.platform.hydra.node.Node;
 import flipkart.platform.hydra.node.NodeEventListener;
+import flipkart.platform.hydra.utils.UnModifiableMap;
 
 /**
  * User: shashwat
@@ -13,6 +15,18 @@ public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
 {
     protected final ConcurrentMap<String, Node<T2, ?>> consumerNodes = new ConcurrentHashMap<String, Node<T2, ?>>();
     protected final ConcurrentMap<String, Node<?, T1>> producerNodes = new ConcurrentHashMap<String, Node<?, T1>>();
+
+    private final Selector<T2> selector;
+
+    protected AbstractLink()
+    {
+        this(new DefaultSelector<T2>());
+    }
+
+    public AbstractLink(Selector<T2> selector)
+    {
+        this.selector = selector;
+    }
 
     private enum RunState
     {
@@ -39,6 +53,28 @@ public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
                 node.addListener(new ProducerNodeListener());
         }
     }
+
+    public boolean send(T2 i)
+    {
+        final Collection<Node<T2, ?>> selectedNodes = selector.select(i, UnModifiableMap.from(consumerNodes));
+        
+        if (selectedNodes != null)
+        {
+            int count = 0;
+            for (Node<T2, ?> selection : selectedNodes)
+            {
+                if (selection != null)
+                {
+                    ++count;
+                    selection.accept(i);
+                }
+            }
+            return (count > 0);
+        }
+
+        return false;
+    }
+
 
     @Override
     public boolean isTerminal()
@@ -93,7 +129,7 @@ public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
     private class ProducerNodeListener implements NodeEventListener<T1>
     {
         @Override
-        public void forward(T1 t)
+        public void onNewMessage(T1 t)
         {
             AbstractLink.this.forward(t);
         }
@@ -112,7 +148,7 @@ public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
     private class ConsumerNodeListener<O> implements NodeEventListener<O>
     {
         @Override
-        public void forward(O o)
+        public void onNewMessage(O o)
         {
         }
 
@@ -122,5 +158,14 @@ public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
         {
             AbstractLink.this.removeConsumer((Node<T2, ?>) node);
         }
-    }    
+    }
+
+    private static class DefaultSelector<T> implements Selector<T>
+    {
+        @Override
+        public Collection<Node<T, ?>> select(T i, UnModifiableMap<String, Node<T, ?>> nodes)
+        {
+            return nodes.values();
+        }
+    }
 }

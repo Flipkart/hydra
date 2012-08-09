@@ -15,6 +15,7 @@
     <modules>
         <module>workstation</module>
         <module>http</module>
+        <module>forkjoin</module>
     </modules>
 </project>
 

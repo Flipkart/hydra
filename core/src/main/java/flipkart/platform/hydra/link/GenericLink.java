@@ -26,6 +26,8 @@ public interface GenericLink<T1, T2>
     */
     public <I> void addProducer(Node<I, T1> node);
 
+    public boolean send(T2 t2);
+    
     /**
      * Indicates if the link is the terminal, i.e., there are no nodes appended at the end of this link
      *

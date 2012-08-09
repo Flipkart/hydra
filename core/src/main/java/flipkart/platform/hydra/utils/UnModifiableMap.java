@@ -3,6 +3,7 @@ package flipkart.platform.hydra.utils;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+import com.google.common.collect.Maps;
 
 /**
  * User: shashwat
@@ -15,6 +16,11 @@ public class UnModifiableMap<K, V>
     public static <K, V> UnModifiableMap<K, V> from(Map<K, V> map)
     {
         return new UnModifiableMap<K, V>(map);
+    }
+
+    public static <K, V> UnModifiableMap<K, V> copyOf(Map<K, V> map)
+    {
+        return new UnModifiableMap<K, V>(Maps.newHashMap(map));
     }
 
     public UnModifiableMap(Map<K, V> wrappedMap)
@@ -32,12 +38,12 @@ public class UnModifiableMap<K, V>
         return wrappedMap.isEmpty();
     }
 
-    public boolean containsKey(Object key)
+    public boolean containsKey(K key)
     {
         return wrappedMap.containsKey(key);
     }
 
-    public V get(Object key)
+    public V get(K key)
     {
         return wrappedMap.get(key);
     }

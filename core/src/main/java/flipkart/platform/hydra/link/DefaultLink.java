@@ -5,15 +5,13 @@ import flipkart.platform.hydra.node.Node;
 import flipkart.platform.hydra.utils.UnModifiableMap;
 
 /**
- * A class that implements default {@link Link} that can have more than one attached nodes and can forward messages to
+ * A class that implements default {@link Link} that can have more than one attached nodes and can onNewMessage messages to
  * one or more nodes depending if a {@link Selector}. Default behavior is to send messages to all the nodes.
  *
  * @author shashwat
  */
 public class DefaultLink<T> extends AbstractLink<T, T> implements Link<T>
 {
-    private final Selector<T> selector;
-
     public static <T> DefaultLink<T> from(Selector<T> selector)
     {
         return new DefaultLink<T>(selector);
@@ -21,41 +19,17 @@ public class DefaultLink<T> extends AbstractLink<T, T> implements Link<T>
 
     public DefaultLink()
     {
-        this(new DefaultSelector<T>());
+        super();
     }
 
     public DefaultLink(Selector<T> selector)
     {
-        this.selector = selector;
+        super(selector);
     }
 
-    public boolean forward(T i)
+    @Override
+    protected boolean forward(T t)
     {
-        int count = 0;
-        final Collection<Node<T, ?>> selectedNodes = selector.select(i, UnModifiableMap.from(consumerNodes));
-
-        if (selectedNodes != null && !selectedNodes.isEmpty())
-        {
-            for (Node<T, ?> selection : selectedNodes)
-            {
-                if (selection != null)
-                {
-                    ++count;
-                    selection.accept(i);
-                }
-            }
-        }
-
-        return (count > 0);
-    }
-
-
-    private static class DefaultSelector<T> implements Selector<T>
-    {
-        @Override
-        public Collection<Node<T, ?>> select(T i, UnModifiableMap<String, Node<T, ?>> nodes)
-        {
-            return nodes.values();
-        }
+        return send(t);
     }
 }

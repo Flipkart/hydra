@@ -165,7 +165,7 @@ public abstract class AbstractNode<I, O, J extends Job<I>> implements Node<I, O>
         {
             for (NodeEventListener<O> eventListener : eventListeners)
             {
-                eventListener.forward(o);
+                eventListener.onNewMessage(o);
             }
         }
 

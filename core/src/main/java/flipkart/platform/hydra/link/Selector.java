@@ -12,14 +12,14 @@ import flipkart.platform.hydra.utils.UnModifiableMap;
 public interface Selector<T>
 {
     /**
-     * Select one or more nodes to forward the message to.
+     * Select one or more nodes to onNewMessage the message to.
      *
      *
      * @param i
      *     Job description to be forwarded
      * @param nodes
      *     {@link flipkart.platform.hydra.node.Node}s registered with this link
-     * @return List of nodes to forward to. An empty or null return value
+     * @return List of nodes to onNewMessage to. An empty or null return value
      *         will cause the job to be discarded.
      */
     public Collection<Node<T, ?>> select(T i, UnModifiableMap<String, Node<T, ?>> nodes);
