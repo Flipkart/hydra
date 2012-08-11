@@ -28,7 +28,7 @@ public class DefaultLink<T> extends AbstractLink<T, T> implements Link<T>
     }
 
     @Override
-    protected boolean forward(T t)
+    protected boolean forward(Node<?, ? extends T> node, T t)
     {
         return send(t);
     }

@@ -3,6 +3,7 @@ package flipkart.platform.hydra.link;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import flipkart.platform.hydra.node.AbstractControlNodeEventListener;
 import flipkart.platform.hydra.node.Node;
 import flipkart.platform.hydra.node.NodeEventListener;
 import flipkart.platform.hydra.utils.UnModifiableMap;
@@ -96,14 +97,14 @@ public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
         }
     }
 
-    protected abstract boolean forward(T1 t);
+    protected abstract boolean forward(Node<?, ? extends T1> node, T1 t);
 
-    private void removeConsumer(Node<T2, ?> node)
+    private void removeConsumer(Node<?, ?> node)
     {
         consumerNodes.remove(node.getName());
     }
 
-    private void removeProducer(Node<?, T1> node)
+    private void removeProducer(Node<?, ?> node)
     {
         producerNodes.remove(node.getName());
     }
@@ -129,13 +130,13 @@ public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
     private class ProducerNodeListener implements NodeEventListener<T1>
     {
         @Override
-        public void onNewMessage(T1 t)
+        public void onNewMessage(Node<?, ? extends T1> node, T1 t)
         {
-            AbstractLink.this.forward(t);
+            AbstractLink.this.forward(node, t);
         }
 
         @Override
-        public void onShutdown(Node<?, T1> node, boolean awaitTermination) throws InterruptedException
+        public void onShutdown(Node<?, ?> node, boolean awaitTermination) throws InterruptedException
         {
             AbstractLink.this.removeProducer(node);
             AbstractLink.this.tryShutdown(awaitTermination);
@@ -145,18 +146,13 @@ public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
     /**
      * @param <O>
      */
-    private class ConsumerNodeListener<O> implements NodeEventListener<O>
+    private class ConsumerNodeListener<O> extends AbstractControlNodeEventListener<O>
     {
         @Override
-        public void onNewMessage(O o)
-        {
-        }
-
-        @Override
         @SuppressWarnings("unchecked")
-        public void onShutdown(Node<?, O> node, boolean awaitTermination) throws InterruptedException
+        public void onShutdown(Node<?, ?> node, boolean awaitTermination) throws InterruptedException
         {
-            AbstractLink.this.removeConsumer((Node<T2, ?>) node);
+            AbstractLink.this.removeConsumer(node);
         }
     }
 

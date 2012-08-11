@@ -1,17 +1,21 @@
 package flipkart.platform.hydra.utils;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import com.google.common.collect.Maps;
 
 /**
  * User: shashwat
  * Date: 01/08/12
  */
-public class UnModifiableMap<K, V>
+public class UnModifiableMap<K, V> implements Iterable<Map.Entry<K, V>>
 {
     private final Map<K, V> wrappedMap;
+
+    @Override
+    public Iterator<Map.Entry<K, V>> iterator()
+    {
+        return wrappedMap.entrySet().iterator();
+    }
 
     public static <K, V> UnModifiableMap<K, V> from(Map<K, V> map)
     {
@@ -50,18 +54,24 @@ public class UnModifiableMap<K, V>
 
     public Set<K> keySet()
     {
-        return wrappedMap.keySet();
+        return Collections.unmodifiableSet(wrappedMap.keySet());
     }
 
 
     public Collection<V> values()
     {
-        return wrappedMap.values();
+        return Collections.unmodifiableCollection(wrappedMap.values());
     }
 
 
     public Set<Map.Entry<K, V>> entrySet()
     {
-        return wrappedMap.entrySet();
+        return Collections.unmodifiableSet(wrappedMap.entrySet());
+    }
+
+    @Override
+    public String toString()
+    {
+        return wrappedMap.toString();
     }
 }

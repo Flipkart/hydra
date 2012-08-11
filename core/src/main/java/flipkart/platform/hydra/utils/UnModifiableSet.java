@@ -1,6 +1,7 @@
 package flipkart.platform.hydra.utils;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import com.google.common.collect.Iterators;
@@ -21,6 +22,11 @@ public class UnModifiableSet<I>
     public static <I> UnModifiableSet<I> from(Set<I> backingSet)
     {
         return new UnModifiableSet<I>(backingSet);
+    }
+
+    public static <I> UnModifiableSet<I> copyOf(Set<I> backingSet)
+    {
+        return new UnModifiableSet<I>(new HashSet<I>(backingSet));
     }
 
     public int size()
@@ -50,5 +56,11 @@ public class UnModifiableSet<I>
     public boolean containsAll(Collection<?> c)
     {
         return backingSet.containsAll(c);
+    }
+
+    @Override
+    public String toString()
+    {
+        return backingSet.toString();
     }
 }

@@ -8,7 +8,7 @@ import flipkart.platform.hydra.node.Node;
  */
 public class LinkBuilder<O>
 {
-    private DefaultLink<O> link;
+    private Link<O> link;
 
     public LinkBuilder(Selector<O> selector)
     {
@@ -20,9 +20,19 @@ public class LinkBuilder<O>
         this.link = new DefaultLink<O>();
     }
 
+    public LinkBuilder(Link<O> link)
+    {
+        this.link = link;
+    }
+
     public static <O> LinkBuilder<O> using(Selector<O> selector)
     {
         return new LinkBuilder<O>(selector);
+    }
+
+    public static <O> LinkBuilder<O> using(Link<O> link)
+    {
+        return new LinkBuilder<O>(link);
     }
 
     public static <O> LinkBuilder<O> link(Node<?, O>... fromNodes)

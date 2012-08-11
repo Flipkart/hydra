@@ -1,10 +1,8 @@
 package flipkart.platform.hydra.node;
 
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import com.google.common.collect.Lists;
 import com.yammer.metrics.annotation.Timed;
 import flipkart.platform.hydra.job.Job;
 import flipkart.platform.hydra.job.JobFactory;
@@ -24,58 +22,25 @@ import flipkart.platform.hydra.utils.ThreadLocalRepository;
  *     Output job description type
  * @author shashwat
  */
-public abstract class AbstractNode<I, O, J extends Job<I>> implements Node<I, O>
+public abstract class AbstractNode<I, O, J extends Job<I>> extends AbstractNodeBase<I, O>
 {
-    public static enum RunState
-    {
-        ACTIVE,
-        SHUTTING_DOWN,
-        SHUTDOWN
-    }
-
     protected final HQueue<I> queue;
 
     private final ExecutorService executorService;
     private final RetryPolicy<I> retryPolicy;
     private final ThreadLocalRepository<J> threadLocalJobRepository;
-    private final String name;
-
     private final AtomicReference<RunState> state = new AtomicReference<RunState>(RunState.ACTIVE);
     private final RefCounter activeWorkers = new RefCounter(0);
-
-    private final List<NodeEventListener<O>> eventListeners = Lists.newLinkedList();
 
     protected AbstractNode(String name, ExecutorService executorService, HQueue<I> queue, RetryPolicy<I> retryPolicy,
         JobFactory<? extends J> jobFactory)
     {
-        this.name = name;
-
+        super(name);
         this.queue = queue;
         this.executorService = executorService;
         this.retryPolicy = retryPolicy;
 
         this.threadLocalJobRepository = ThreadLocalRepository.from(JobObjectFactory.from(jobFactory));
-    }
-
-    @Override
-    public String getName()
-    {
-        return name;
-    }
-
-    @Override
-    public void addListener(NodeEventListener<O> nodeListener)
-    {
-        eventListeners.add(nodeListener);
-    }
-
-    @Override
-    public void accept(I i)
-    {
-        validateState();
-
-        queue.enqueue(i);
-        scheduleWorker();
     }
 
     public boolean isDone()
@@ -84,27 +49,10 @@ public abstract class AbstractNode<I, O, J extends Job<I>> implements Node<I, O>
     }
 
     @Override
-    public final void shutdown(boolean awaitTermination) throws InterruptedException
+    protected void acceptMessage(I i)
     {
-        if (state.compareAndSet(RunState.ACTIVE, RunState.SHUTTING_DOWN))
-        {
-            // loop and check if there are no jobs in the queue and no workers executing any job
-            while (awaitTermination && !isDone())
-            {
-                Thread.sleep(10);
-            }
-
-            shutdownResources(awaitTermination);
-            state.set(RunState.SHUTDOWN);
-            for (NodeEventListener<O> eventListener : eventListeners)
-            {
-                eventListener.onShutdown(this, awaitTermination);
-            }
-        }
-        else
-        {
-            throw new RuntimeException("Shutdown already in progress");
-        }
+        queue.enqueue(i);
+        scheduleWorker();
     }
 
     protected void executeWorker(WorkerBase worker)
@@ -122,14 +70,6 @@ public abstract class AbstractNode<I, O, J extends Job<I>> implements Node<I, O>
         threadLocalJobRepository.close();
 
         // TODO: send shutdown
-    }
-
-    protected final void validateState()
-    {
-        if (state.get() != RunState.ACTIVE)
-        {
-            throw new RuntimeException("accept() called after shutdown()");
-        }
     }
 
     protected abstract void scheduleWorker();
@@ -165,7 +105,7 @@ public abstract class AbstractNode<I, O, J extends Job<I>> implements Node<I, O>
         {
             for (NodeEventListener<O> eventListener : eventListeners)
             {
-                eventListener.onNewMessage(o);
+                eventListener.onNewMessage(AbstractNode.this, o);
             }
         }
 

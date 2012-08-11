@@ -1,12 +1,12 @@
 package flipkart.platform.hydra.link;
 
-import com.google.common.base.Predicate;
-import flipkart.platform.hydra.link.ForkUnit;
+import flipkart.platform.hydra.traits.Predicate;
 
 /**
  * User: shashwat
  * Date: 07/08/12
  */
-public interface JoinPredicate<I, S> extends Predicate<ForkUnit<I, S>>
+public interface JoinPredicate<I, O> extends Predicate<ForkUnit<I, O>>
 {
+    public boolean apply(ForkUnit<I, O> forkUnit);
 }

@@ -15,8 +15,17 @@ public class Pair<I, O>
         this.second = second;
     }
 
-    public static <I, O> Pair<I, O> from(I i, O o)
+    public static <I, O> Pair<I, O> of(I i, O o)
     {
         return new Pair<I, O>(i, o);
+    }
+
+    @Override
+    public String toString()
+    {
+        return "Pair{" +
+            "first=" + first +
+            ", second=" + second +
+            '}';
     }
 }

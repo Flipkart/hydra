@@ -7,7 +7,7 @@ package flipkart.platform.hydra.node;
 public abstract class AbstractControlNodeEventListener<T> implements NodeEventListener<T>
 {
     @Override
-    public void onNewMessage(T i)
+    public void onNewMessage(Node<?, ? extends T> node, T i)
     {
     }
 }

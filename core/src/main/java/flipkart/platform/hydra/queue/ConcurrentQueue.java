@@ -17,6 +17,11 @@ public class ConcurrentQueue<I> implements HQueue<I>
     private final ConcurrentLinkedQueue<MessageCtx<I>> backingQueue = new ConcurrentLinkedQueue<MessageCtx<I>>();
     private final RefCounter counter = new RefCounter(0);
 
+    public static <I> ConcurrentQueue<I> newQueue()
+    {
+        return new ConcurrentQueue<I>();
+    }
+    
     @Override
     public void enqueue(I i)
     {

@@ -7,7 +7,7 @@ package flipkart.platform.hydra.node;
 public abstract class AbstractMessageEventListener<T>implements NodeEventListener<T>
 {
     @Override
-    public void onShutdown(Node<?, T> tNode, boolean awaitTermination) throws InterruptedException
+    public void onShutdown(Node<?, ?> tNode, boolean awaitTermination) throws InterruptedException
     {
         // nothing
     }
