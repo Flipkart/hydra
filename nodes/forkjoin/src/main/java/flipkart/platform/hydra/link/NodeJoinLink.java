@@ -21,6 +21,8 @@ public class NodeJoinLink<I extends CanGroup, O>
     private final ForkLinkImpl forkLink;
     private final JoinLinkImpl joinLink;
 
+    private final ForkJoinMetrics metrics = new ForkJoinMetrics(ForkJoinLink.class);
+
     public NodeJoinLink(Predicate<ForkUnit<String, O>> joinPredicate)
     {
         this.joinPredicate = joinPredicate;
@@ -84,7 +86,9 @@ public class NodeJoinLink<I extends CanGroup, O>
 
     private void sendSourceMessages(I i)
     {
-        forkMap.put(i.getGroupId(), Pair.of(i, new ForkUnit<String, O>(joinLink.getForkNodeNames(), joinPredicate)));
+        final Collection<String> nodeNames = joinLink.getForkNodeNames();
+        forkMap.put(i.getGroupId(), Pair.of(i, new ForkUnit<String, O>(nodeNames, joinPredicate)));
+        metrics.reportForks(nodeNames.size());
     }
 
     private NodeJoinResult<I, O> joinForkResponse(Node<?, ? extends Pair<I, O>> node, Pair<I, O> t)
@@ -98,6 +102,7 @@ public class NodeJoinLink<I extends CanGroup, O>
             if (forkUnit.join(result))
             {
                 forkMap.remove(t.first.getGroupId());
+                metrics.reportJoin(System.currentTimeMillis() - forkUnit.getCreatedTimestamp());
                 return new NodeJoinResult<I, O>(forkUnit.getResult(), t.first, forkUnit.getFinishedForks(),
                     forkUnit.getUnfinishedForks());
             }

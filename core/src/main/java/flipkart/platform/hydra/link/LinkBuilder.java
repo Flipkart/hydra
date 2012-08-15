@@ -45,7 +45,12 @@ public class LinkBuilder<O>
     public <O1> LinkBuilder<O1> to(Node<O, O1> node)
     {
         link.addConsumer(node);
-        return new LinkBuilder<O1>();
+        return link(node);
+    }
+
+    public void toOnly(Node<O, ?> node)
+    {
+        link.addConsumer(node);
     }
 
     public void to(Node<O, ?>... nodes)

@@ -22,6 +22,8 @@ public class ForkJoinLink<I extends CanGroup, O>
     private final ForkLinkImpl forkLink;
     private final JoinLinkImpl joinLink;
 
+    private final ForkJoinMetrics metrics = new ForkJoinMetrics(ForkJoinLink.class);
+
     public ForkJoinLink(Predicate<ForkUnit<I, O>> joinPredicate)
     {
         this.joinPredicate = joinPredicate;
@@ -109,6 +111,7 @@ public class ForkJoinLink<I extends CanGroup, O>
         for (Map.Entry<String, Collection<I>> entry : partitionCollection.entrySet())
         {
             forkMap.put(entry.getKey(), new ForkUnit<I, O>(entry.getValue(), joinPredicate));
+            metrics.reportForks(entry.getValue().size());
         }
     }
 
@@ -118,6 +121,8 @@ public class ForkJoinLink<I extends CanGroup, O>
         if (forkUnit != null && forkUnit.join(t))
         {
             forkMap.remove(t.first.getGroupId());
+            metrics.reportJoin(System.currentTimeMillis() - forkUnit.getCreatedTimestamp());
+            
             return new ForkJoinResult<I, O>(forkUnit.getResult(), forkUnit.getFinishedForks(),
                 forkUnit.getUnfinishedForks());
         }

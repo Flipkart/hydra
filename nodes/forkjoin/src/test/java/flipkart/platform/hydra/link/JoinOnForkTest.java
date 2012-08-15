@@ -110,7 +110,7 @@ public class JoinOnForkTest extends JoinTestBase
         queue.clear();
     }
 
-    private void setupJoinLink(JoinPredicate<PersonTask, Boolean> predicate)
+    private void setupJoinLink(JoinPredicate<PersonTask, Boolean> predicate) throws InterruptedException
     {
         final ForkJoinLink<PersonTask, Boolean> joinLink = new ForkJoinLink<PersonTask, Boolean>(predicate);
         joinLink.addSource(personTaskNode);
@@ -120,6 +120,7 @@ public class JoinOnForkTest extends JoinTestBase
         for (int i = 0; i < sequences.length; ++i)
         {
             personTaskNode.accept(i);
+            Thread.sleep(10);
         }
     }
 
@@ -147,7 +148,7 @@ public class JoinOnForkTest extends JoinTestBase
     public void test_And_ForkJoin() throws Exception
     {
         setupJoinLink(new LeaveAndJoinPredicate<PersonTask>());
-        
+
         for (int i = 0; i < sequences.length; ++i)
         {
             final ForkJoinResult<PersonTask, Boolean> result = queue.poll();

@@ -1,6 +1,15 @@
 package flipkart.platform.hydra.link;
 
+import java.io.Console;
+import java.util.concurrent.TimeUnit;
+import com.yammer.metrics.reporting.ConsoleReporter;
+import com.yammer.metrics.reporting.CsvReporter;
+import com.yammer.metrics.reporting.JmxReporter;
 import flipkart.platform.hydra.traits.CanGroup;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
 
 /**
  * User: shashwat
@@ -67,5 +76,16 @@ public class JoinTestBase
         {
             return input.isFinished() && !input.getFinishedForks().values().contains(Boolean.FALSE);
         }
+    }
+
+    @BeforeClass
+    public static void classSetup() throws Exception
+    {
+        //ConsoleReporter.enable(50, TimeUnit.MILLISECONDS);
+    }
+
+    @AfterClass
+    public static void classTearDown() throws Exception
+    {
     }
 }

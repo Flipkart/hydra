@@ -19,12 +19,6 @@ public class ResultNode<O> extends AbstractNodeBase<O, Void>
     }
 
     @Override
-    public boolean isDone()
-    {
-        return runState.get() != RunState.ACTIVE;
-    }
-
-    @Override
     protected void acceptMessage(O result)
     {
         queue.add(result);

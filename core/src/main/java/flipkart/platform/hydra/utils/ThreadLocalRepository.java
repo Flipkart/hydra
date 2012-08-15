@@ -44,7 +44,7 @@ public class ThreadLocalRepository<T>
                     try
                     {
                         initialize(j);
-                        return new ThreadLocalWeakReference<T>(j, queue);
+                        return new ThreadLocalWeakReference<T>(j);
                     }
                     catch (Exception e)
                     {

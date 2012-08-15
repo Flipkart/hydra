@@ -84,9 +84,17 @@ public abstract class AbstractNodeBase<I, O> implements Node<I, O>
         }
     }
 
-    public abstract boolean isDone();
+    // Can override completely
+    public boolean isDone()
+    {
+        return (runState.get() != RunState.ACTIVE);
+    }
+
+    // Can override completely
+    protected void shutdownResources(boolean awaitTermination) throws InterruptedException
+    {
+    }
 
     protected abstract void acceptMessage(I i);
-    protected abstract void shutdownResources(boolean awaitTermination) throws InterruptedException;
 
 }

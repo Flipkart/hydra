@@ -1,7 +1,12 @@
 package flipkart.platform.hydra.utils;
 
+import java.lang.ref.Reference;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import com.google.common.base.FinalizableReferenceQueue;
 import com.google.common.base.FinalizableWeakReference;
+import com.google.common.collect.Sets;
 import flipkart.platform.hydra.traits.Initializable;
 
 /**
@@ -17,17 +22,42 @@ import flipkart.platform.hydra.traits.Initializable;
  */
 public final class ThreadLocalWeakReference<T> extends FinalizableWeakReference<Thread>
 {
+    private static final Set<Reference> finalizableSet =
+        Sets.newSetFromMap(new ConcurrentHashMap<Reference, Boolean>());
+
+    private static final FinalizableReferenceQueue referenceQueue = new FinalizableReferenceQueue();
+
+    static
+    {
+        Runtime.getRuntime().addShutdownHook(new Thread()
+        {
+            @Override
+            public void run()
+            {
+                // we need a copy here to avoid concurrent modification exception
+                final Reference[] references = finalizableSet.toArray(new Reference[finalizableSet.size()]);
+                for (Reference reference : references)
+                {
+                    reference.enqueue();
+                }
+            }
+        });
+    }
+
     private final T ob;
 
-    public ThreadLocalWeakReference(T ob, FinalizableReferenceQueue queue)
+    public ThreadLocalWeakReference(T ob)
     {
-        super(Thread.currentThread(), queue);
+        super(Thread.currentThread(), referenceQueue);
+        finalizableSet.add(this);
+
         this.ob = ob;
     }
 
     @Override
     public void finalizeReferent()
     {
+        finalizableSet.remove(this);
         Initializable.LifeCycle.destroy(ob);
     }
 

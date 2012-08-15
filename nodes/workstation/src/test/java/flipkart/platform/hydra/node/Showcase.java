@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import flipkart.platform.hydra.job.AbstractJob;
 import flipkart.platform.hydra.jobs.ManyToManyJob;
 import flipkart.platform.hydra.jobs.OneToOneJob;
 import flipkart.platform.hydra.link.Selector;
@@ -16,8 +17,7 @@ import static flipkart.platform.hydra.link.LinkBuilder.using;
 
 public class Showcase
 {
-    public static class Job1 extends JobBase<String> implements
-        OneToOneJob<String, Integer>
+    public static class Job1 extends AbstractJob<String> implements OneToOneJob<String, Integer>
     {
         @Override
         public Integer execute(String i)
@@ -28,7 +28,7 @@ public class Showcase
         }
     }
 
-    public static class Job2 extends JobBase<Integer> implements
+    public static class Job2 extends AbstractJob<Integer> implements
         OneToOneJob<Integer, String>
     {
         @Override
@@ -40,7 +40,7 @@ public class Showcase
         }
     }
 
-    public static class EvenJob extends JobBase<String> implements
+    public static class EvenJob extends AbstractJob<String> implements
         OneToOneJob<String, Void>
     {
         @Override
@@ -51,7 +51,7 @@ public class Showcase
         }
     }
 
-    public static class OddJob extends JobBase<String> implements
+    public static class OddJob extends AbstractJob<String> implements
         OneToOneJob<String, Void>
     {
         @Override
@@ -62,7 +62,7 @@ public class Showcase
         }
     }
 
-    public static class MultiJob extends JobBase<Integer> implements
+    public static class MultiJob extends AbstractJob<Integer> implements
         ManyToManyJob<Integer, Integer>
     {
         public static AtomicInteger count = new AtomicInteger();
