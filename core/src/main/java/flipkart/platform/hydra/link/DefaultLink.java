@@ -1,8 +1,7 @@
 package flipkart.platform.hydra.link;
 
-import java.util.Collection;
 import flipkart.platform.hydra.node.Node;
-import flipkart.platform.hydra.utils.UnModifiableMap;
+import flipkart.platform.hydra.topology.Topology;
 
 /**
  * A class that implements default {@link Link} that can have more than one attached nodes and can onNewMessage messages to
@@ -12,19 +11,19 @@ import flipkart.platform.hydra.utils.UnModifiableMap;
  */
 public class DefaultLink<T> extends AbstractLink<T, T> implements Link<T>
 {
-    public static <T> DefaultLink<T> from(Selector<T> selector)
+    public static <T> DefaultLink<T> from(Topology topology, Selector<T> selector)
     {
-        return new DefaultLink<T>(selector);
+        return new DefaultLink<T>(topology, selector);
     }
 
-    public DefaultLink()
+    public DefaultLink(Topology topology)
     {
-        super();
+        super(topology);
     }
 
-    public DefaultLink(Selector<T> selector)
+    public DefaultLink(Topology topology, Selector<T> selector)
     {
-        super(selector);
+        super(topology, selector);
     }
 
     @Override

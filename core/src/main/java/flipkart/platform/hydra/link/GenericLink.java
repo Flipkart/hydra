@@ -1,6 +1,7 @@
 package flipkart.platform.hydra.link;
 
 import flipkart.platform.hydra.node.Node;
+import flipkart.platform.hydra.topology.Topology;
 
 /**
  * Link is an interface that defines how two {@link flipkart.platform.hydra.node.Node}s are connected with
@@ -8,7 +9,7 @@ import flipkart.platform.hydra.node.Node;
  *
  * @author shashwat
  */
-public interface GenericLink<T1, T2>
+interface GenericLink<T1, T2>
 {
     /**
      * Attach given node to it's end
@@ -26,6 +27,13 @@ public interface GenericLink<T1, T2>
     */
     public <I> void addProducer(Node<I, T1> node);
 
+    Topology getTopology();
+    
+    /**
+     * Send a message to consumers
+     * @param t2 message that needs to be sent
+     * @return true only if message was sent to at least one consumer
+     */
     public boolean send(T2 t2);
     
     /**

@@ -1,6 +1,5 @@
 package flipkart.platform.hydra.link;
 
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -31,7 +30,7 @@ public class ForkUnit<I, O>
         this(unfinishedForks, null);
     }
 
-    public ForkUnit(Collection<I> unfinishedForks, @Nullable Predicate<ForkUnit<I, O>> joinPredicate)
+    public ForkUnit(Collection<I> unfinishedForks, Predicate<ForkUnit<I, O>> joinPredicate)
     {
         this.joinPredicate = joinPredicate;
         this.unfinishedForks = new HashSet<I>(unfinishedForks);

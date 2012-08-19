@@ -1,6 +1,6 @@
 package flipkart.platform.hydra.node;
 
-import flipkart.platform.hydra.link.Link;
+import flipkart.platform.hydra.traits.HasIdentity;
 
 /**
  * A workflow node that accepts jobs, executes them and forwards their results
@@ -13,16 +13,8 @@ import flipkart.platform.hydra.link.Link;
  * @param <O>
  *            Output Job description type
  */
-public interface Node<I, O>
+public interface Node<I, O> extends HasIdentity
 {
-    /**
-     * Get node name. Is used to identify a node if multiple nodes are attached
-     * to this node.
-     * 
-     * @return Node name
-     */
-    public String getName();
-
     public void addListener(NodeEventListener<O> nodeListener);
 
     /**
@@ -44,4 +36,6 @@ public interface Node<I, O>
      * @throws InterruptedException if the thread is interrupted
      */
     public void shutdown(boolean awaitTermination) throws InterruptedException;
+
+    public boolean isShutdown();
 }

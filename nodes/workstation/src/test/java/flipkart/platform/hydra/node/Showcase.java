@@ -10,6 +10,7 @@ import flipkart.platform.hydra.jobs.ManyToManyJob;
 import flipkart.platform.hydra.jobs.OneToOneJob;
 import flipkart.platform.hydra.link.Selector;
 import flipkart.platform.hydra.node.builder.WSBuilder;
+import flipkart.platform.hydra.topology.SupervisorTopology;
 import flipkart.platform.hydra.utils.UnModifiableMap;
 
 import static flipkart.platform.hydra.link.LinkBuilder.link;
@@ -108,21 +109,24 @@ public class Showcase
                 WSBuilder.withM2MJob(MultiJob.class).withBatch(3, 3).withThreadExecutor(2).withMaxAttempts(2).build();
 
             final Node<Integer, String> ws2 =
-                WSBuilder.withO2OJob(Job2.class).withMaxAttempts(2).withSelector(new MySelector())
-                    .build();
+                WSBuilder.withO2OJob(Job2.class).withMaxAttempts(2).build();
 
             final Node<String, Void> evenNode = WSBuilder.withO2OJob(EvenJob.class).build();
             final Node<String, Void> oddNode = WSBuilder.withO2OJob(OddJob.class).build();
 
-            link(ws1).to(wsM).to(ws2);
-            using(new MySelector()).linkFrom(ws2).to(evenNode, oddNode);
+            final SupervisorTopology topology = new SupervisorTopology();
+
+            link(topology, ws1).to(wsM).to(ws2);
+            using(topology, new MySelector()).linkFrom(ws2).to(evenNode, oddNode);
 
             final long start = System.nanoTime();
             for (int i = 1; i <= 100; ++i)
             {
                 ws1.accept(String.valueOf(i));
             }
-            ws1.shutdown(true);
+            //ws1.shutdown(true);
+
+            topology.shutdown(true);
 
             final long end = System.nanoTime();
             System.out.print("Done, It took ");

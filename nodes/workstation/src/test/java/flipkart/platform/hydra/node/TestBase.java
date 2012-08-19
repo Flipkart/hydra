@@ -8,6 +8,8 @@ import flipkart.platform.hydra.job.ExecutionFailureException;
 import flipkart.platform.hydra.jobs.ManyToManyJob;
 import flipkart.platform.hydra.jobs.OneToManyJob;
 import flipkart.platform.hydra.jobs.OneToOneJob;
+import flipkart.platform.hydra.topology.SupervisorTopology;
+import org.junit.Before;
 
 import static org.junit.Assert.assertFalse;
 
@@ -17,6 +19,8 @@ import static org.junit.Assert.assertFalse;
  */
 public class TestBase
 {
+    protected SupervisorTopology topology;
+
     public static class TestAbstractJob<I> extends AbstractJob<I>
     {
         @Override
@@ -135,4 +139,40 @@ public class TestBase
         }
     }
 
+    public static class Ping implements OneToOneJob<String, String>
+    {
+        @Override
+        public String execute(String s) throws ExecutionFailureException
+        {
+            return s.equals("pong") ? "ping" : null;
+        }
+
+        @Override
+        public void failed(String s, Throwable cause)
+        {
+            // Test will fail while shutting down, so no asserts
+        }
+    }
+
+    public static class Pong implements OneToOneJob<String, String>
+    {
+        @Override
+        public String execute(String s) throws ExecutionFailureException
+        {
+            return s.equals("ping") ? "pong" : null;
+        }
+
+        @Override
+        public void failed(String s, Throwable cause)
+        {
+            // Test will fail while shutting down, so no asserts
+        }
+
+    }
+
+    @Before
+    public void setUp() throws Exception
+    {
+        topology = new SupervisorTopology();
+    }
 }

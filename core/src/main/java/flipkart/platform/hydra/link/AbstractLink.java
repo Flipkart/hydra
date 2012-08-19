@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentMap;
 import flipkart.platform.hydra.node.AbstractControlNodeEventListener;
 import flipkart.platform.hydra.node.Node;
 import flipkart.platform.hydra.node.NodeEventListener;
+import flipkart.platform.hydra.topology.Topology;
 import flipkart.platform.hydra.utils.UnModifiableMap;
 
 /**
@@ -18,47 +19,66 @@ public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
     protected final ConcurrentMap<String, Node<?, T1>> producerNodes = new ConcurrentHashMap<String, Node<?, T1>>();
 
     private final Selector<T2> selector;
+    private final Topology topology;
 
-    protected AbstractLink()
+    protected AbstractLink(Topology topology)
     {
-        this(new DefaultSelector<T2>());
+        this(topology, new DefaultSelector<T2>());
     }
 
-    public AbstractLink(Selector<T2> selector)
+    public AbstractLink(Topology topology, Selector<T2> selector)
     {
+        this.topology = topology;
         this.selector = selector;
     }
 
-    private enum RunState
+    /*
+     * It is essential that {@link #addConsumer(flipkart.platform.hydra.node.Node)} and {@link
+     * #addProducer(flipkart.platform.hydra.node.Node)} are synchronized because they add {@link Supervisor} to
+     * producers and consumers
+     */
+    public synchronized <O> void addConsumer(Node<T2, O> node)
     {
-        ACTIVE, SHUTTING_DOWN, SHUTDOWN
+        if (validate(node) && consumerNodes.putIfAbsent(node.getName(), node) == null)
+        {
+            node.addListener(new ConsumerNodeListener<O>());
+
+            for (Node producerNode : producerNodes.values())
+            {
+                topology.connect(producerNode, node);
+            }
+        }
     }
 
-    private volatile RunState runState = RunState.ACTIVE;
-
-    public <O> void addConsumer(Node<T2, O> node)
+    /*
+     * It is essential that {@link #addConsumer(flipkart.platform.hydra.node.Node)} and {@link
+     * #addProducer(flipkart.platform.hydra.node.Node)} are synchronized because they add {@link Supervisor} to
+     * producers and consumers
+     */
+    @Override
+    public synchronized <I> void addProducer(Node<I, T1> node)
     {
-        if (valid(node))
+        if (validate(node) && producerNodes.putIfAbsent(node.getName(), node) == null)
         {
-            if (consumerNodes.putIfAbsent(node.getName(), node) == null)
-                node.addListener(new ConsumerNodeListener<O>());
+            node.addListener(new ProducerNodeListener());
+
+            for (Node consumerNode : consumerNodes.values())
+            {
+                topology.connect(node, consumerNode);
+            }
         }
     }
 
     @Override
-    public <I> void addProducer(Node<I, T1> node)
+    public Topology getTopology()
     {
-        if (valid(node))
-        {
-            if (producerNodes.putIfAbsent(node.getName(), node) == null)
-                node.addListener(new ProducerNodeListener());
-        }
+        return topology;
     }
 
     public boolean send(T2 i)
     {
         final Collection<Node<T2, ?>> selectedNodes = selector.select(i, UnModifiableMap.from(consumerNodes));
-        
+
         if (selectedNodes != null)
         {
             int count = 0;
@@ -83,20 +103,6 @@ public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
         return consumerNodes.isEmpty();
     }
 
-    protected synchronized void tryShutdown(boolean awaitTermination) throws InterruptedException
-    {
-        if (runState == RunState.ACTIVE && producerNodes.isEmpty())
-        {
-            runState = RunState.SHUTTING_DOWN;
-
-            for (Node<?, ?> node : consumerNodes.values())
-            {
-                node.shutdown(awaitTermination);
-            }
-            runState = RunState.SHUTDOWN;
-        }
-    }
-
     protected abstract boolean forward(Node<?, ? extends T1> node, T1 t);
 
     private void removeConsumer(Node<?, ?> node)
@@ -109,18 +115,13 @@ public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
         producerNodes.remove(node.getName());
     }
 
-    private synchronized boolean valid(Node<?, ?> node)
+    private synchronized boolean validate(Node node)
     {
         if (node == null)
         {
             throw new IllegalArgumentException("input node cannot be null!");
         }
-
-        if (runState != RunState.ACTIVE)
-        {
-            throw new IllegalStateException("Link is already shutting down. Cannot made modifications");
-        }
-
+        
         return true;
     }
 
@@ -139,7 +140,6 @@ public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
         public void onShutdown(Node<?, ?> node, boolean awaitTermination) throws InterruptedException
         {
             AbstractLink.this.removeProducer(node);
-            AbstractLink.this.tryShutdown(awaitTermination);
         }
     }
 

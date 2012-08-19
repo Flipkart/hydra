@@ -3,6 +3,7 @@ package flipkart.platform.hydra.node;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicReference;
+import flipkart.platform.hydra.utils.RunState;
 
 /**
  * An base {@link Node} implementation
@@ -15,16 +16,9 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public abstract class AbstractNodeBase<I, O> implements Node<I, O>
 {
-    public static enum RunState
-    {
-        ACTIVE,
-        SHUTTING_DOWN,
-        SHUTDOWN
-    }
-
     private final String name;
-    protected final AtomicReference<RunState> runState = new AtomicReference<RunState>(RunState.ACTIVE);
-    
+    protected final RunState runState = new RunState();
+
     protected final Queue<NodeEventListener<O>> eventListeners = new ConcurrentLinkedQueue<NodeEventListener<O>>();
 
     protected AbstractNodeBase(String name)
@@ -55,7 +49,7 @@ public abstract class AbstractNodeBase<I, O> implements Node<I, O>
     @Override
     public void shutdown(boolean awaitTermination) throws InterruptedException
     {
-        if (runState.compareAndSet(RunState.ACTIVE, RunState.SHUTTING_DOWN))
+        if (runState.shuttingDown())
         {
             // loop and check if there are no jobs in the queue and no workers executing any job
             while (awaitTermination && !isDone())
@@ -64,7 +58,8 @@ public abstract class AbstractNodeBase<I, O> implements Node<I, O>
             }
 
             shutdownResources(awaitTermination);
-            runState.set(RunState.SHUTDOWN);
+            runState.shutdown();
+
             for (NodeEventListener<O> eventListener : eventListeners)
             {
                 eventListener.onShutdown(this, awaitTermination);
@@ -72,13 +67,19 @@ public abstract class AbstractNodeBase<I, O> implements Node<I, O>
         }
         else
         {
-            throw new RuntimeException("Shutdown already in progress");
+            throw new RuntimeException("Shutdown already in progress for node: " + getName());
         }
+    }
+
+    @Override
+    public boolean isShutdown()
+    {
+        return runState.isShutdown();
     }
 
     protected final void validateState()
     {
-        if (runState.get() != RunState.ACTIVE)
+        if (isDone())
         {
             throw new RuntimeException("accept() called after shutdown()");
         }
@@ -87,13 +88,22 @@ public abstract class AbstractNodeBase<I, O> implements Node<I, O>
     // Can override completely
     public boolean isDone()
     {
-        return (runState.get() != RunState.ACTIVE);
+        return (!runState.isActive());
     }
 
     // Can override completely
     protected void shutdownResources(boolean awaitTermination) throws InterruptedException
     {
     }
+
+    protected void sendForward(O o)
+    {
+        for (NodeEventListener<O> eventListener : eventListeners)
+        {
+            eventListener.onNewMessage(AbstractNodeBase.this, o);
+        }
+    }
+
 
     protected abstract void acceptMessage(I i);
 

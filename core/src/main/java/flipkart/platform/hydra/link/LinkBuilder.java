@@ -1,6 +1,7 @@
 package flipkart.platform.hydra.link;
 
 import flipkart.platform.hydra.node.Node;
+import flipkart.platform.hydra.topology.Topology;
 
 /**
  * User: shashwat
@@ -10,24 +11,25 @@ public class LinkBuilder<O>
 {
     private Link<O> link;
 
-    public LinkBuilder(Selector<O> selector)
+    public LinkBuilder(Topology topology, Selector<O> selector)
     {
-        this.link = new DefaultLink<O>(selector);
+        this.link = new DefaultLink<O>(topology, selector);
     }
 
-    public LinkBuilder()
+    public LinkBuilder(Topology topology)
     {
-        this.link = new DefaultLink<O>();
+        this.link = new DefaultLink<O>(topology);
     }
 
     public LinkBuilder(Link<O> link)
     {
         this.link = link;
+
     }
 
-    public static <O> LinkBuilder<O> using(Selector<O> selector)
+    public static <O> LinkBuilder<O> using(Topology topology, Selector<O> selector)
     {
-        return new LinkBuilder<O>(selector);
+        return new LinkBuilder<O>(topology, selector);
     }
 
     public static <O> LinkBuilder<O> using(Link<O> link)
@@ -35,9 +37,9 @@ public class LinkBuilder<O>
         return new LinkBuilder<O>(link);
     }
 
-    public static <O> LinkBuilder<O> link(Node<?, O>... fromNodes)
+    public static <O> LinkBuilder<O> link(Topology topology, Node<?, O>... fromNodes)
     {
-        final LinkBuilder<O> linkBuilder = new LinkBuilder<O>();
+        final LinkBuilder<O> linkBuilder = new LinkBuilder<O>(topology);
         linkBuilder.linkFrom(fromNodes);
         return linkBuilder;
     }
@@ -45,7 +47,7 @@ public class LinkBuilder<O>
     public <O1> LinkBuilder<O1> to(Node<O, O1> node)
     {
         link.addConsumer(node);
-        return link(node);
+        return link(link.getTopology(), node);
     }
 
     public void toOnly(Node<O, ?> node)

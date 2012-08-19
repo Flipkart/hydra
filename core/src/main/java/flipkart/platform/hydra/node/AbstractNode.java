@@ -2,7 +2,6 @@ package flipkart.platform.hydra.node;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import com.yammer.metrics.annotation.Timed;
 import flipkart.platform.hydra.job.Job;
 import flipkart.platform.hydra.job.JobFactory;
@@ -29,7 +28,6 @@ public abstract class AbstractNode<I, O, J extends Job<I>> extends AbstractNodeB
     private final ExecutorService executorService;
     private final RetryPolicy<I> retryPolicy;
     private final ThreadLocalRepository<J> threadLocalJobRepository;
-    private final AtomicReference<RunState> state = new AtomicReference<RunState>(RunState.ACTIVE);
     private final RefCounter activeWorkers = new RefCounter(0);
 
     protected AbstractNode(String name, ExecutorService executorService, HQueue<I> queue, RetryPolicy<I> retryPolicy,
@@ -45,7 +43,7 @@ public abstract class AbstractNode<I, O, J extends Job<I>> extends AbstractNodeB
 
     public boolean isDone()
     {
-        return (queue.isEmpty() && activeWorkers.isZero());
+        return (super.isDone() && queue.isEmpty() && activeWorkers.isZero());
     }
 
     @Override
@@ -68,8 +66,6 @@ public abstract class AbstractNode<I, O, J extends Job<I>> extends AbstractNodeB
             ;
 
         threadLocalJobRepository.close();
-
-        // TODO: send shutdown
     }
 
     protected abstract void scheduleWorker();
@@ -103,10 +99,7 @@ public abstract class AbstractNode<I, O, J extends Job<I>> extends AbstractNodeB
 
         public void sendForward(O o)
         {
-            for (NodeEventListener<O> eventListener : eventListeners)
-            {
-                eventListener.onNewMessage(AbstractNode.this, o);
-            }
+            AbstractNode.this.sendForward(o);
         }
 
         public void retryMessage(J j, MessageCtx<I> messageCtx, Throwable t)

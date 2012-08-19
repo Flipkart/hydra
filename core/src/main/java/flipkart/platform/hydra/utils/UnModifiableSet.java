@@ -10,7 +10,7 @@ import com.google.common.collect.Iterators;
  * User: shashwat
  * Date: 08/08/12
  */
-public class UnModifiableSet<I>
+public class UnModifiableSet<I> implements Iterable<I>
 {
     private final Set<I> backingSet;
 
@@ -22,6 +22,11 @@ public class UnModifiableSet<I>
     public static <I> UnModifiableSet<I> from(Set<I> backingSet)
     {
         return new UnModifiableSet<I>(backingSet);
+    }
+
+    public static <I> UnModifiableSet<I> from(Collection<I> backingSet)
+    {
+        return new UnModifiableSet<I>(new HashSet<I>(backingSet));
     }
 
     public static <I> UnModifiableSet<I> copyOf(Set<I> backingSet)

@@ -10,6 +10,7 @@ import flipkart.platform.hydra.job.ExecutionFailureException;
 import flipkart.platform.hydra.jobs.OneToOneJob;
 import flipkart.platform.hydra.node.Node;
 import flipkart.platform.hydra.node.builder.WSBuilder;
+import flipkart.platform.hydra.topology.Topology;
 import flipkart.platform.hydra.utils.Pair;
 import org.junit.After;
 import org.junit.Before;
@@ -73,8 +74,7 @@ public class JoinOnNodeTest extends JoinTestBase
     @Before
     public void setUp() throws Exception
     {
-        ConsoleReporter.enable(10, TimeUnit.MINUTES);
-
+        super.setUp();
         personNode = WSBuilder.withO2OJob(PersonJob.class).build();
 
         node1 = WSBuilder.withO2OJob(CheckCasualLeaveJob.class).build();
@@ -133,7 +133,7 @@ public class JoinOnNodeTest extends JoinTestBase
 
     private void setupJoinLink(JoinPredicate<String, Boolean> predicate)
     {
-        final NodeJoinLink<Person, Boolean> joinLink = new NodeJoinLink<Person, Boolean>(predicate);
+        final NodeJoinLink<Person, Boolean> joinLink = new NodeJoinLink<Person, Boolean>(topology, predicate);
         joinLink.addSource(personNode);
 
         joinLink.addFork(node1);

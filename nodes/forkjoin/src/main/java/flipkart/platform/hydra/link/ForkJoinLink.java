@@ -7,6 +7,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import flipkart.platform.hydra.node.Node;
+import flipkart.platform.hydra.topology.Topology;
 import flipkart.platform.hydra.traits.CanGroup;
 import flipkart.platform.hydra.utils.Pair;
 
@@ -24,19 +25,19 @@ public class ForkJoinLink<I extends CanGroup, O>
 
     private final ForkJoinMetrics metrics = new ForkJoinMetrics(ForkJoinLink.class);
 
-    public ForkJoinLink(Predicate<ForkUnit<I, O>> joinPredicate)
+    public ForkJoinLink(Topology topology, Predicate<ForkUnit<I, O>> joinPredicate)
     {
         this.joinPredicate = joinPredicate;
 
-        this.forkLink = new ForkLinkImpl();
-        this.joinLink = new JoinLinkImpl();
+        this.forkLink = new ForkLinkImpl(topology);
+        this.joinLink = new JoinLinkImpl(topology);
     }
-    public ForkJoinLink(Selector<I> forkSelector, Predicate<ForkUnit<I, O>> joinPredicate)
+    public ForkJoinLink(Topology topology, Selector<I> forkSelector, Predicate<ForkUnit<I, O>> joinPredicate)
     {
         this.joinPredicate = joinPredicate;
 
-        this.forkLink = new ForkLinkImpl(forkSelector);
-        this.joinLink = new JoinLinkImpl();
+        this.forkLink = new ForkLinkImpl(topology, forkSelector);
+        this.joinLink = new JoinLinkImpl(topology);
     }
 
     @SuppressWarnings("unchecked")
@@ -58,13 +59,14 @@ public class ForkJoinLink<I extends CanGroup, O>
 
     protected class ForkLinkImpl extends AbstractLink<Collection<I>, I>
     {
-        public ForkLinkImpl()
+        public ForkLinkImpl(Topology topology)
         {
+            super(topology);
         }
 
-        public ForkLinkImpl(Selector<I> selector)
+        public ForkLinkImpl(Topology topology, Selector<I> selector)
         {
-            super(selector);
+            super(topology, selector);
         }
 
         @Override
@@ -81,6 +83,11 @@ public class ForkJoinLink<I extends CanGroup, O>
 
     protected class JoinLinkImpl extends AbstractLink<Pair<I, O>, ForkJoinResult<I, O>>
     {
+        public JoinLinkImpl(Topology topology)
+        {
+            super(topology);
+        }
+
         @Override
         protected boolean forward(Node<?, ? extends Pair<I, O>> pairNode, Pair<I, O> t)
         {

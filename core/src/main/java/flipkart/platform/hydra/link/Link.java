@@ -9,6 +9,6 @@ import flipkart.platform.hydra.node.Node;
  * @param <T> Object type that needs to be transferred between nodes
  * @author shashwat
  */
-public interface Link<T> extends GenericLink<T, T>
+interface Link<T> extends GenericLink<T, T>
 {
 }

@@ -98,6 +98,8 @@ public class JoinOnForkTest extends JoinTestBase
     @Before
     public void setUp() throws Exception
     {
+        super.setUp();
+
         personTaskNode = WSBuilder.withO2OJob(PersonTaskJob.class).build();
         forkNode = WSBuilder.withO2OJob(CheckLeaveJob.class).withName(LeaveType.CASUAL.name()).build();
         queue = Queues.newConcurrentLinkedQueue();
@@ -112,7 +114,7 @@ public class JoinOnForkTest extends JoinTestBase
 
     private void setupJoinLink(JoinPredicate<PersonTask, Boolean> predicate) throws InterruptedException
     {
-        final ForkJoinLink<PersonTask, Boolean> joinLink = new ForkJoinLink<PersonTask, Boolean>(predicate);
+        final ForkJoinLink<PersonTask, Boolean> joinLink = new ForkJoinLink<PersonTask, Boolean>(topology, predicate);
         joinLink.addSource(personTaskNode);
         joinLink.addFork(forkNode);
         joinLink.addConsumer(new ResultNode<ForkJoinResult<PersonTask, Boolean>>("resultNode", queue));

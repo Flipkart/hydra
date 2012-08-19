@@ -4,14 +4,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import com.google.common.util.concurrent.MoreExecutors;
-import flipkart.platform.hydra.link.DefaultLink;
-import flipkart.platform.hydra.link.Link;
-import flipkart.platform.hydra.link.Selector;
 import flipkart.platform.hydra.node.RetryPolicy;
 import flipkart.platform.hydra.queue.ConcurrentQueue;
 import flipkart.platform.hydra.queue.HQueue;
 import flipkart.platform.hydra.utils.DefaultRetryPolicy;
-import flipkart.platform.hydra.utils.JobThreadFactory;
+import flipkart.platform.hydra.utils.HydraThreadFactory;
 import flipkart.platform.hydra.utils.NoRetryPolicy;
 
 /**
@@ -21,7 +18,6 @@ import flipkart.platform.hydra.utils.NoRetryPolicy;
 public abstract class AbstractNodeBuilder<I, O> implements NodeBuilder<I,O>
 {
     protected String name = "";
-    protected Link<O> link = new DefaultLink<O>();
     protected RetryPolicy<I> retryPolicy = new NoRetryPolicy<I>();
     protected ExecutorService executorService = MoreExecutors.sameThreadExecutor();
     protected HQueue<I> queue = new ConcurrentQueue<I>();
@@ -36,19 +32,6 @@ public abstract class AbstractNodeBuilder<I, O> implements NodeBuilder<I,O>
     {
         this.name = name;
         return this;
-    }
-
-    @Override
-    public NodeBuilder<I, O> withLink(Link<O> oLink)
-    {
-        this.link = link;
-        return this;
-    }
-
-    @Override
-    public NodeBuilder<I, O> withSelector(Selector<O> selector)
-    {
-        return withLink(new DefaultLink<O>(selector));
     }
 
     @Override
@@ -74,7 +57,7 @@ public abstract class AbstractNodeBuilder<I, O> implements NodeBuilder<I,O>
     @Override
     public NodeBuilder<I, O> withThreadExecutor(int numThreads)
     {
-        return withExecutor(Executors.newFixedThreadPool(numThreads, new JobThreadFactory(name)));
+        return withExecutor(Executors.newFixedThreadPool(numThreads, new HydraThreadFactory(name)));
     }
 
     @Override

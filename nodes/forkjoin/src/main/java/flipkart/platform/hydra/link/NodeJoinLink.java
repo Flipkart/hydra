@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentMap;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Maps;
 import flipkart.platform.hydra.node.Node;
+import flipkart.platform.hydra.topology.Topology;
 import flipkart.platform.hydra.traits.CanGroup;
 import flipkart.platform.hydra.utils.Pair;
 
@@ -23,12 +24,12 @@ public class NodeJoinLink<I extends CanGroup, O>
 
     private final ForkJoinMetrics metrics = new ForkJoinMetrics(ForkJoinLink.class);
 
-    public NodeJoinLink(Predicate<ForkUnit<String, O>> joinPredicate)
+    public NodeJoinLink(Topology topology, Predicate<ForkUnit<String, O>> joinPredicate)
     {
         this.joinPredicate = joinPredicate;
 
-        this.forkLink = new ForkLinkImpl();
-        this.joinLink = new JoinLinkImpl();
+        this.forkLink = new ForkLinkImpl(topology);
+        this.joinLink = new JoinLinkImpl(topology);
     }
 
     public void addSource(Node<?, I> node)
@@ -49,10 +50,15 @@ public class NodeJoinLink<I extends CanGroup, O>
 
     protected class ForkLinkImpl extends AbstractLink<I, I>
     {
+        public ForkLinkImpl(Topology topology)
+        {
+            super(topology);
+        }
+
         @Override
         protected boolean forward(Node<?, ? extends I> collectionNode, I i)
         {
-            sendSourceMessages(i);
+            createForkUnit(i);
             send(i);
             return true;
         }
@@ -60,6 +66,11 @@ public class NodeJoinLink<I extends CanGroup, O>
 
     protected class JoinLinkImpl extends AbstractLink<Pair<I, O>, NodeJoinResult<I, O>>
     {
+        public JoinLinkImpl(Topology topology)
+        {
+            super(topology);
+        }
+
         @Override
         protected boolean forward(Node<?, ? extends Pair<I, O>> pairNode, Pair<I, O> t)
         {
@@ -77,14 +88,9 @@ public class NodeJoinLink<I extends CanGroup, O>
         {
             return Collections.unmodifiableCollection(producerNodes.keySet());
         }
-
-        public Collection<Node<?, Pair<I, O>>> getForkNodes()
-        {
-            return Collections.unmodifiableCollection(producerNodes.values());
-        }
     }
 
-    private void sendSourceMessages(I i)
+    private void createForkUnit(I i)
     {
         final Collection<String> nodeNames = joinLink.getForkNodeNames();
         forkMap.put(i.getGroupId(), Pair.of(i, new ForkUnit<String, O>(nodeNames, joinPredicate)));
