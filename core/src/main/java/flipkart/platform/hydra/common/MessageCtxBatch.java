@@ -1,6 +1,7 @@
-package flipkart.platform.hydra.queue;
+package flipkart.platform.hydra.common;
 
 import com.google.common.collect.UnmodifiableIterator;
+import flipkart.platform.hydra.common.MessageCtx;
 
 /**
  * User: shashwat

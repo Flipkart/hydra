@@ -1,13 +1,13 @@
 package flipkart.platform.hydra.node.workstation;
 
 import java.util.concurrent.ExecutorService;
-import flipkart.platform.hydra.job.ExecutionFailureException;
+import flipkart.platform.hydra.common.JobExecutionContext;
+import flipkart.platform.hydra.common.MessageCtx;
 import flipkart.platform.hydra.job.JobFactory;
 import flipkart.platform.hydra.jobs.OneToOneJob;
 import flipkart.platform.hydra.node.AbstractNode;
 import flipkart.platform.hydra.node.RetryPolicy;
 import flipkart.platform.hydra.queue.HQueue;
-import flipkart.platform.hydra.queue.MessageCtx;
 
 /**
  * A {@link AbstractNode} that accepts and executes {@link OneToOneJob}.
@@ -15,7 +15,7 @@ import flipkart.platform.hydra.queue.MessageCtx;
  * @author shashwat
  */
 
-public class OneToOneWorkStation<I, O> extends AbstractNode<I, O, OneToOneJob<I, O>>
+public class OneToOneWorkStation<I, O> extends WorkStationBase<I, O, OneToOneJob<I, O>>
 {
     public OneToOneWorkStation(String name, ExecutorService executorService, HQueue<I> queue,
         RetryPolicy<I> retryPolicy, JobFactory<? extends OneToOneJob<I, O>> jobFactory)
@@ -24,44 +24,48 @@ public class OneToOneWorkStation<I, O> extends AbstractNode<I, O, OneToOneJob<I,
     }
 
     @Override
-    protected void scheduleWorker()
+    protected void scheduleJob()
     {
-        executeWorker(new OneToOneWorker());
+        executeWorker(new OneToOneWorker(newJobExecutionContext(), queue.read()));
     }
 
-    private class OneToOneWorker extends WorkerBase
+    private static class OneToOneWorker<I, O> implements Runnable
     {
-        @Override
-        protected void execute(OneToOneJob<I, O> job)
+        private final JobExecutionContext<I, O, OneToOneJob<I, O>> jobExecutionContext;
+        private final MessageCtx<I> messageCtx;
+
+        public OneToOneWorker(JobExecutionContext<I, O, OneToOneJob<I, O>> jobExecutionContext,
+            MessageCtx<I> messageCtx)
         {
-            final MessageCtx<I> messageCtx = queue.read();
+            this.jobExecutionContext = jobExecutionContext;
+            this.messageCtx = messageCtx;
+        }
+
+        @Override
+        public void run()
+        {
             final I i = messageCtx.get();
-            try
+            final OneToOneJob<I, O> job = jobExecutionContext.begin();
+
+            if (job != null)
             {
                 try
                 {
                     final O o = job.execute(i);
-                    ackMessage(messageCtx, o);
+                    jobExecutionContext.submitResponse(o);
+                    jobExecutionContext.succeeded(job, messageCtx);
                 }
-                catch (ExecutionFailureException ex)
+                catch (Exception ex)
                 {
-                    retryMessage(job, messageCtx, ex);
+                    jobExecutionContext.failed(job, messageCtx, ex);
+                }
+                finally
+                {
+                    jobExecutionContext.end(job);
                 }
             }
-            catch (Exception ex)
-            {
-                discardMessage(job, messageCtx, ex);
-            }
-        }
 
-        private void ackMessage(MessageCtx<I> messageCtx, O output)
-        {
-            if (output != null)
-            {
-                sendForward(output);
-            }
-            messageCtx.ack();
         }
-
     }
+
 }

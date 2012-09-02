@@ -10,5 +10,5 @@ public interface HasIdentity
      * The name by which this object can be identified
      * @return name assigned to this entity
      */
-    String getName();
+    String getIdentity();
 }

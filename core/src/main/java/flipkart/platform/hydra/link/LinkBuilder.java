@@ -1,7 +1,7 @@
 package flipkart.platform.hydra.link;
 
 import flipkart.platform.hydra.node.Node;
-import flipkart.platform.hydra.topology.Topology;
+import flipkart.platform.hydra.topology.LinkTopology;
 
 /**
  * User: shashwat
@@ -11,12 +11,12 @@ public class LinkBuilder<O>
 {
     private Link<O> link;
 
-    public LinkBuilder(Topology topology, Selector<O> selector)
+    public LinkBuilder(LinkTopology topology, Selector<O> selector)
     {
         this.link = new DefaultLink<O>(topology, selector);
     }
 
-    public LinkBuilder(Topology topology)
+    public LinkBuilder(LinkTopology topology)
     {
         this.link = new DefaultLink<O>(topology);
     }
@@ -27,7 +27,7 @@ public class LinkBuilder<O>
 
     }
 
-    public static <O> LinkBuilder<O> using(Topology topology, Selector<O> selector)
+    public static <O> LinkBuilder<O> using(LinkTopology topology, Selector<O> selector)
     {
         return new LinkBuilder<O>(topology, selector);
     }
@@ -37,7 +37,7 @@ public class LinkBuilder<O>
         return new LinkBuilder<O>(link);
     }
 
-    public static <O> LinkBuilder<O> link(Topology topology, Node<?, O>... fromNodes)
+    public static <O> LinkBuilder<O> link(LinkTopology topology, Node<?, O>... fromNodes)
     {
         final LinkBuilder<O> linkBuilder = new LinkBuilder<O>(topology);
         linkBuilder.linkFrom(fromNodes);

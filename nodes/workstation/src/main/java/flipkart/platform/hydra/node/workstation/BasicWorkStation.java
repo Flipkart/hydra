@@ -1,11 +1,12 @@
 package flipkart.platform.hydra.node.workstation;
 
 import java.util.concurrent.ExecutorService;
+import flipkart.platform.hydra.common.MessageCtx;
 import flipkart.platform.hydra.job.BasicJob;
 import flipkart.platform.hydra.job.JobFactory;
 import flipkart.platform.hydra.node.AbstractNode;
+import flipkart.platform.hydra.common.JobExecutionContext;
 import flipkart.platform.hydra.queue.HQueue;
-import flipkart.platform.hydra.queue.MessageCtx;
 import flipkart.platform.hydra.utils.NoRetryPolicy;
 
 /**
@@ -14,7 +15,7 @@ import flipkart.platform.hydra.utils.NoRetryPolicy;
  * @author shashwat
  */
 
-public class BasicWorkStation<I, O> extends AbstractNode<I, O, BasicJob<I, O>>
+public class BasicWorkStation<I, O> extends WorkStationBase<I, O, BasicJob<I, O>>
 {
     public BasicWorkStation(String name, ExecutorService executorService, HQueue<I> queue,
         JobFactory<? extends BasicJob<I, O>> basicJobJobFactory)
@@ -23,27 +24,28 @@ public class BasicWorkStation<I, O> extends AbstractNode<I, O, BasicJob<I, O>>
     }
 
     @Override
-    protected void scheduleWorker()
+    protected void scheduleJob()
     {
-        executeWorker(new BasicWorker());
+        executeWorker(new BasicWorker(newJobExecutionContext(), queue.read()));
     }
 
-    private class BasicWorker extends WorkerBase
+    private static class BasicWorker<I, O> implements Runnable
     {
-        @Override
-        protected void execute(BasicJob<I, O> job)
+        private final JobExecutionContext<I, O, BasicJob<I, O>> jobExecutionContext;
+        private final MessageCtx<I> messageCtx;
+
+        public BasicWorker(JobExecutionContext<I, O, BasicJob<I, O>> jobExecutionContext, MessageCtx<I> messageCtx)
         {
-            final MessageCtx<I> messageCtx = queue.read();
+            this.jobExecutionContext = jobExecutionContext;
+            this.messageCtx = messageCtx;
+        }
+
+        @Override
+        public void run()
+        {
+            final BasicJob<I, O> job = jobExecutionContext.begin();
             final I i = messageCtx.get();
-            try
-            {
-                job.execute(i, this);
-                messageCtx.ack();
-            }
-            catch (Exception ex)
-            {
-                discardMessage(job, messageCtx, ex);
-            }
+            job.execute(i, jobExecutionContext);
         }
 
     }

@@ -30,7 +30,7 @@ import flipkart.platform.hydra.queue.events.QueueRemovedEvent;
  * queue; with a {@code ThreadLocalReadPartitioner} that binds queues to a thread (probably a valid but useless example).
  *
  * @param <I> The payload type
- * @see flipkart.platform.hydra.queue.MessageCtx for generic payload paramter
+ * @see flipkart.platform.hydra.common.MessageCtx for generic payload paramter
  * @see flipkart.platform.hydra.queue.ConcurrentPartitionQueue
  */
 public class Partitioner<I, Q extends HQueue<I>>

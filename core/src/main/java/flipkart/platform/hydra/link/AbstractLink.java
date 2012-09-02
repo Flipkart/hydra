@@ -1,12 +1,15 @@
 package flipkart.platform.hydra.link;
 
 import java.util.Collection;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import com.google.common.collect.Queues;
 import flipkart.platform.hydra.node.AbstractControlNodeEventListener;
 import flipkart.platform.hydra.node.Node;
 import flipkart.platform.hydra.node.NodeEventListener;
-import flipkart.platform.hydra.topology.Topology;
+import flipkart.platform.hydra.topology.LinkTopology;
+import flipkart.platform.hydra.utils.UnModifiableCollection;
 import flipkart.platform.hydra.utils.UnModifiableMap;
 
 /**
@@ -18,18 +21,21 @@ public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
     protected final ConcurrentMap<String, Node<T2, ?>> consumerNodes = new ConcurrentHashMap<String, Node<T2, ?>>();
     protected final ConcurrentMap<String, Node<?, T1>> producerNodes = new ConcurrentHashMap<String, Node<?, T1>>();
 
-    private final Selector<T2> selector;
-    private final Topology topology;
+    private final Queue<LinkEventListener> eventListeners = Queues.newConcurrentLinkedQueue();
 
-    protected AbstractLink(Topology topology)
+    private final Selector<T2> selector;
+    private final LinkTopology topology;
+
+    protected AbstractLink(LinkTopology topology)
     {
         this(topology, new DefaultSelector<T2>());
     }
 
-    public AbstractLink(Topology topology, Selector<T2> selector)
+    public AbstractLink(LinkTopology topology, Selector<T2> selector)
     {
         this.topology = topology;
         this.selector = selector;
+        topology.addLink(this);
     }
 
     /*
@@ -39,38 +45,56 @@ public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
      */
     public synchronized <O> void addConsumer(Node<T2, O> node)
     {
-        if (validate(node) && consumerNodes.putIfAbsent(node.getName(), node) == null)
+        if (validate(node) && consumerNodes.putIfAbsent(node.getIdentity(), node) == null)
         {
             node.addListener(new ConsumerNodeListener<O>());
-
-            for (Node producerNode : producerNodes.values())
-            {
-                topology.connect(producerNode, node);
-            }
         }
+
+        for (LinkEventListener eventListener : eventListeners)
+        {
+            eventListener.onConsumerNodeAdded(this, node);
+        }
+    }
+
+    @Override
+    public UnModifiableCollection<Node<T2, ?>> getConsumers()
+    {
+        return UnModifiableCollection.from(consumerNodes.values());
+    }
+
+    @Override
+    public void addEventListener(LinkEventListener listener)
+    {
+        eventListeners.add(listener);
     }
 
     /*
-     * It is essential that {@link #addConsumer(flipkart.platform.hydra.node.Node)} and {@link
-     * #addProducer(flipkart.platform.hydra.node.Node)} are synchronized because they add {@link Supervisor} to
-     * producers and consumers
-     */
+    * It is essential that {@link #addConsumer(flipkart.platform.hydra.node.Node)} and {@link
+    * #addProducer(flipkart.platform.hydra.node.Node)} are synchronized because they add {@link Supervisor} to
+    * producers and consumers
+    */
     @Override
     public synchronized <I> void addProducer(Node<I, T1> node)
     {
-        if (validate(node) && producerNodes.putIfAbsent(node.getName(), node) == null)
+        if (validate(node) && producerNodes.putIfAbsent(node.getIdentity(), node) == null)
         {
             node.addListener(new ProducerNodeListener());
+        }
 
-            for (Node consumerNode : consumerNodes.values())
-            {
-                topology.connect(node, consumerNode);
-            }
+        for (LinkEventListener eventListener : eventListeners)
+        {
+            eventListener.onProducerNodeAdded(this, node);
         }
     }
 
     @Override
-    public Topology getTopology()
+    public UnModifiableCollection<Node<?, T1>> getProducers()
+    {
+        return UnModifiableCollection.from(producerNodes.values());
+    }
+
+    @Override
+    public LinkTopology getTopology()
     {
         return topology;
     }
@@ -107,12 +131,21 @@ public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
 
     private void removeConsumer(Node<?, ?> node)
     {
-        consumerNodes.remove(node.getName());
+        consumerNodes.remove(node.getIdentity());
+        for (LinkEventListener eventListener : eventListeners)
+        {
+            eventListener.onConsumerNodeRemoved(this, node);
+        }
+
     }
 
     private void removeProducer(Node<?, ?> node)
     {
-        producerNodes.remove(node.getName());
+        producerNodes.remove(node.getIdentity());
+        for (LinkEventListener eventListener : eventListeners)
+        {
+            eventListener.onProducerNodeRemoved(this, node);
+        }
     }
 
     private synchronized boolean validate(Node node)
@@ -121,7 +154,7 @@ public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
         {
             throw new IllegalArgumentException("input node cannot be null!");
         }
-        
+
         return true;
     }
 

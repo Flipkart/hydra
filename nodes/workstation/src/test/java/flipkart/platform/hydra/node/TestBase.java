@@ -8,7 +8,7 @@ import flipkart.platform.hydra.job.ExecutionFailureException;
 import flipkart.platform.hydra.jobs.ManyToManyJob;
 import flipkart.platform.hydra.jobs.OneToManyJob;
 import flipkart.platform.hydra.jobs.OneToOneJob;
-import flipkart.platform.hydra.topology.SupervisorTopology;
+import flipkart.platform.hydra.topology.LinkTopology;
 import org.junit.Before;
 
 import static org.junit.Assert.assertFalse;
@@ -19,7 +19,7 @@ import static org.junit.Assert.assertFalse;
  */
 public class TestBase
 {
-    protected SupervisorTopology topology;
+    protected LinkTopology topology;
 
     public static class TestAbstractJob<I> extends AbstractJob<I>
     {
@@ -27,9 +27,11 @@ public class TestBase
         public void failed(I i, Throwable cause)
         {
             System.out.println("Job failed!! " + i);
+            cause.printStackTrace();
             assertFalse("No jobs can fail!!!!", true);
         }
     }
+
     public static class SentenceToLines extends TestAbstractJob<String> implements OneToManyJob<String, String>
     {
         @Override
@@ -122,6 +124,11 @@ public class TestBase
         }
 
         @Override
+        protected void shutdownResources(boolean awaitTermination) throws InterruptedException
+        {
+        }
+
+        @Override
         protected void acceptMessage(Map<String, Integer> map)
         {
             for (Map.Entry<String, Integer> entry : map.entrySet())
@@ -173,6 +180,6 @@ public class TestBase
     @Before
     public void setUp() throws Exception
     {
-        topology = new SupervisorTopology();
+        topology = new LinkTopology();
     }
 }

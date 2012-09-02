@@ -1,9 +1,12 @@
 package flipkart.platform.hydra.node;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import flipkart.platform.hydra.link.DefaultLink;
+import flipkart.platform.hydra.link.GenericLink;
 import flipkart.platform.hydra.link.Selector;
 import flipkart.platform.hydra.node.builder.WSBuilder;
 import flipkart.platform.hydra.utils.HydraThreadFactory;
@@ -68,7 +71,6 @@ public class WorkStationTest extends TestBase
         link(topology, splitLineNode).to(splitWordNode).to(freqNode).to(mergeNode);
 
         splitLineNode.accept(RANDOM_PARA);
-        //splitLineNode.shutdown(true);
 
         topology.shutdown(true);
 
@@ -78,16 +80,58 @@ public class WorkStationTest extends TestBase
         assertEquals("'viverra' occurs 1 times", 1, (long) mergeNode.mergeFrequencyMap.get("viverra"));
     }
 
+    /**
+     * Some shutdown guarantees at the end of single topology shutdown
+     * <ul>
+     *     <li>all the nodes are in shutdown state</li>
+     *     <li>links have no producers and no consumers</li>
+     * </ul>
+     * @throws Exception exception
+     */
+    @Test
+    public void testShutdownGuarantees() throws Exception
+    {
+        assertTrue("Map must be empty", mergeNode.mergeFrequencyMap.isEmpty());
+        final DefaultLink<String> link1 = new DefaultLink<String>(topology);
+        link1.addProducer(splitLineNode);
+        link1.addConsumer(splitWordNode);
+
+        final DefaultLink<String> link2 = new DefaultLink<String>(topology);
+        link2.addProducer(splitWordNode);
+        link2.addConsumer(freqNode);
+
+        final DefaultLink<Map<String, Integer>> link3 = new DefaultLink(topology);
+        link3.addProducer(freqNode);
+        link3.addConsumer(mergeNode);
+
+        splitLineNode.accept(RANDOM_PARA);
+
+        topology.shutdown(true);
+
+        assertTrue("topology.isShutdown should return true", topology.isShutdown());
+        for (Node node : Arrays.<Node> asList(splitLineNode, splitWordNode, freqNode, mergeNode))
+        {
+            assertTrue("Node (" + node.getIdentity() + ") .isShutdown should return true", node.isShutdown());
+        }
+
+        int count = 0;
+        for (GenericLink link : Arrays.asList(link1, link2, link3))
+        {
+            final int i = ++count;
+            assertTrue("Link" + i + " must not have any producers", link.getProducers().isEmpty());
+            assertTrue("Link" + i + " must not have any consumers", link.getProducers().isEmpty());
+        }
+    }
+
     @Test
     public void testNodeReturnsNull() throws Exception
     {
         assertTrue("Map must be empty", mergeNode.mergeFrequencyMap.isEmpty());
 
-        // wordSanitizer returns null if the input string does not consists of only alphabets
+        // wordSanitizer returns null if the input string do not consist of only alphabets
         link(topology, splitLineNode).to(splitWordNode).to(wordSanitizer).to(freqNode).to(mergeNode);
 
         splitLineNode.accept(RANDOM_PARA);
-        //splitLineNode.shutdown(true);
         topology.shutdown(true);
 
         assertFalse("Map cannot be empty", mergeNode.mergeFrequencyMap.isEmpty());
@@ -107,7 +151,6 @@ public class WorkStationTest extends TestBase
         link(topology, toUpper).to(freqNode).toOnly(mergeNode);
 
         splitLineNode.accept(RANDOM_PARA);
-        //splitLineNode.shutdown(true);
         topology.shutdown(true);
 
         assertFalse("Map cannot be empty", mergeNode.mergeFrequencyMap.isEmpty());
@@ -191,7 +234,7 @@ public class WorkStationTest extends TestBase
         thread.join();
         Thread.sleep(500);
         assertTrue("Terminated after some time", isShutdown.isSet() && isShutdown.get());
-        assertTrue("Ping node terminated", pingNode.isShutdown());
+        assertTrue("Ping node should terminated", pingNode.isShutdown());
         assertTrue("Pong node terminated", pongNode.isShutdown());
 
         assertThreadStoppedWithName(pingThreadFactory.getThreadGroup(), 5);

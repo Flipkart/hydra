@@ -7,7 +7,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import flipkart.platform.hydra.node.Node;
-import flipkart.platform.hydra.topology.Topology;
+import flipkart.platform.hydra.topology.LinkTopology;
 import flipkart.platform.hydra.traits.CanGroup;
 import flipkart.platform.hydra.utils.Pair;
 
@@ -25,23 +25,23 @@ public class ForkJoinLink<I extends CanGroup, O>
 
     private final ForkJoinMetrics metrics = new ForkJoinMetrics(ForkJoinLink.class);
 
-    public ForkJoinLink(Topology topology, Predicate<ForkUnit<I, O>> joinPredicate)
+    public ForkJoinLink(LinkTopology LinkTopology, Predicate<ForkUnit<I, O>> joinPredicate)
     {
         this.joinPredicate = joinPredicate;
 
-        this.forkLink = new ForkLinkImpl(topology);
-        this.joinLink = new JoinLinkImpl(topology);
+        this.forkLink = new ForkLinkImpl(LinkTopology);
+        this.joinLink = new JoinLinkImpl(LinkTopology);
     }
-    public ForkJoinLink(Topology topology, Selector<I> forkSelector, Predicate<ForkUnit<I, O>> joinPredicate)
+    public ForkJoinLink(LinkTopology LinkTopology, Selector<I> forkSelector, Predicate<ForkUnit<I, O>> joinPredicate)
     {
         this.joinPredicate = joinPredicate;
 
-        this.forkLink = new ForkLinkImpl(topology, forkSelector);
-        this.joinLink = new JoinLinkImpl(topology);
+        this.forkLink = new ForkLinkImpl(LinkTopology, forkSelector);
+        this.joinLink = new JoinLinkImpl(LinkTopology);
     }
 
     @SuppressWarnings("unchecked")
-    public void addSource(Node<?, ? extends Collection<I>> node)
+    public void addProducer(Node<?, ? extends Collection<I>> node)
     {
         forkLink.addProducer((Node<?,Collection<I>>) node);
     }
@@ -59,14 +59,14 @@ public class ForkJoinLink<I extends CanGroup, O>
 
     protected class ForkLinkImpl extends AbstractLink<Collection<I>, I>
     {
-        public ForkLinkImpl(Topology topology)
+        public ForkLinkImpl(LinkTopology LinkTopology)
         {
-            super(topology);
+            super(LinkTopology);
         }
 
-        public ForkLinkImpl(Topology topology, Selector<I> selector)
+        public ForkLinkImpl(LinkTopology LinkTopology, Selector<I> selector)
         {
-            super(topology, selector);
+            super(LinkTopology, selector);
         }
 
         @Override
@@ -83,9 +83,9 @@ public class ForkJoinLink<I extends CanGroup, O>
 
     protected class JoinLinkImpl extends AbstractLink<Pair<I, O>, ForkJoinResult<I, O>>
     {
-        public JoinLinkImpl(Topology topology)
+        public JoinLinkImpl(LinkTopology LinkTopology)
         {
-            super(topology);
+            super(LinkTopology);
         }
 
         @Override

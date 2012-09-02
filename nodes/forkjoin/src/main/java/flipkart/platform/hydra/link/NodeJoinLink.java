@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentMap;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Maps;
 import flipkart.platform.hydra.node.Node;
-import flipkart.platform.hydra.topology.Topology;
+import flipkart.platform.hydra.topology.LinkTopology;
 import flipkart.platform.hydra.traits.CanGroup;
 import flipkart.platform.hydra.utils.Pair;
 
@@ -24,7 +24,7 @@ public class NodeJoinLink<I extends CanGroup, O>
 
     private final ForkJoinMetrics metrics = new ForkJoinMetrics(ForkJoinLink.class);
 
-    public NodeJoinLink(Topology topology, Predicate<ForkUnit<String, O>> joinPredicate)
+    public NodeJoinLink(LinkTopology topology, Predicate<ForkUnit<String, O>> joinPredicate)
     {
         this.joinPredicate = joinPredicate;
 
@@ -32,7 +32,7 @@ public class NodeJoinLink<I extends CanGroup, O>
         this.joinLink = new JoinLinkImpl(topology);
     }
 
-    public void addSource(Node<?, I> node)
+    public void addProducer(Node<?, I> node)
     {
         forkLink.addProducer(node);
     }
@@ -50,7 +50,7 @@ public class NodeJoinLink<I extends CanGroup, O>
 
     protected class ForkLinkImpl extends AbstractLink<I, I>
     {
-        public ForkLinkImpl(Topology topology)
+        public ForkLinkImpl(LinkTopology topology)
         {
             super(topology);
         }
@@ -66,7 +66,7 @@ public class NodeJoinLink<I extends CanGroup, O>
 
     protected class JoinLinkImpl extends AbstractLink<Pair<I, O>, NodeJoinResult<I, O>>
     {
-        public JoinLinkImpl(Topology topology)
+        public JoinLinkImpl(LinkTopology topology)
         {
             super(topology);
         }
@@ -104,7 +104,7 @@ public class NodeJoinLink<I extends CanGroup, O>
         if (forkUnitPair != null)
         {
             final ForkUnit<String, O> forkUnit = forkUnitPair.second;
-            final Pair<String, O> result = Pair.of(node.getName(), t.second);
+            final Pair<String, O> result = Pair.of(node.getIdentity(), t.second);
             if (forkUnit.join(result))
             {
                 forkMap.remove(t.first.getGroupId());

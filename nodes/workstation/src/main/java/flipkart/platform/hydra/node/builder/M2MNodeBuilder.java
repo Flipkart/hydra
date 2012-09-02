@@ -9,7 +9,7 @@ import flipkart.platform.hydra.node.workstation.ManyToManyWorkStation;
  * User: shashwat
  * Date: 03/08/12
  */
-public class M2MNodeBuilder<I, O> extends AbstractNodeBuilder<I, O>
+public class M2MNodeBuilder<I, O> extends AbstractWorkStationBuilder<I, O>
 {
     private final JobFactory<? extends ManyToManyJob<I, O>> jobFactory;
     private int maxJobsToGroup = 10;
@@ -21,10 +21,10 @@ public class M2MNodeBuilder<I, O> extends AbstractNodeBuilder<I, O>
         this.jobFactory = jobFactory;
     }
 
-    public M2MNodeBuilder<I, O> withBatch(int maxJobsToGroup, long maxDelays)
+    public M2MNodeBuilder<I, O> withBatch(int maxJobsToGroup, long maxDelaysMs)
     {
         this.maxJobsToGroup = maxJobsToGroup;
-        this.maxDelayMs = maxDelayMs;
+        this.maxDelayMs = maxDelaysMs;
         return this;
     }
 

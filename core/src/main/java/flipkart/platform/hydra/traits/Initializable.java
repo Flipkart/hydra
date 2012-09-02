@@ -10,17 +10,12 @@ package flipkart.platform.hydra.traits;
  * @author shashwat
  * 
  */
-public interface Initializable
+public interface Initializable extends CanDestroy
 {
     /**
      * Initialization
      */
     public void init();
-
-    /**
-     * Destruction
-     */
-    public void destroy();
 
     class LifeCycle
     {

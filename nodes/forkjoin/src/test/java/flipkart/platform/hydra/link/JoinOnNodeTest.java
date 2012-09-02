@@ -2,15 +2,12 @@ package flipkart.platform.hydra.link;
 
 import java.util.Queue;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import com.google.common.collect.Queues;
-import com.yammer.metrics.reporting.ConsoleReporter;
 import flipkart.platform.hydra.job.AbstractJob;
 import flipkart.platform.hydra.job.ExecutionFailureException;
 import flipkart.platform.hydra.jobs.OneToOneJob;
 import flipkart.platform.hydra.node.Node;
 import flipkart.platform.hydra.node.builder.WSBuilder;
-import flipkart.platform.hydra.topology.Topology;
 import flipkart.platform.hydra.utils.Pair;
 import org.junit.After;
 import org.junit.Before;
@@ -134,7 +131,7 @@ public class JoinOnNodeTest extends JoinTestBase
     private void setupJoinLink(JoinPredicate<String, Boolean> predicate)
     {
         final NodeJoinLink<Person, Boolean> joinLink = new NodeJoinLink<Person, Boolean>(topology, predicate);
-        joinLink.addSource(personNode);
+        joinLink.addProducer(personNode);
 
         joinLink.addFork(node1);
         joinLink.addFork(node2);

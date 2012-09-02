@@ -10,7 +10,7 @@ import flipkart.platform.hydra.jobs.ManyToManyJob;
 import flipkart.platform.hydra.jobs.OneToOneJob;
 import flipkart.platform.hydra.link.Selector;
 import flipkart.platform.hydra.node.builder.WSBuilder;
-import flipkart.platform.hydra.topology.SupervisorTopology;
+import flipkart.platform.hydra.topology.LinkTopology;
 import flipkart.platform.hydra.utils.UnModifiableMap;
 
 import static flipkart.platform.hydra.link.LinkBuilder.link;
@@ -114,7 +114,7 @@ public class Showcase
             final Node<String, Void> evenNode = WSBuilder.withO2OJob(EvenJob.class).build();
             final Node<String, Void> oddNode = WSBuilder.withO2OJob(OddJob.class).build();
 
-            final SupervisorTopology topology = new SupervisorTopology();
+            final LinkTopology topology = new LinkTopology();
 
             link(topology, ws1).to(wsM).to(ws2);
             using(topology, new MySelector()).linkFrom(ws2).to(evenNode, oddNode);

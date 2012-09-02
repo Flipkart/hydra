@@ -1,6 +1,6 @@
 package flipkart.platform.hydra.node;
 
-import flipkart.platform.hydra.queue.MessageCtx;
+import flipkart.platform.hydra.common.MessageCtx;
 
 /**
  * User: shashwat
@@ -20,9 +20,8 @@ public interface RetryPolicy<I>
      * Given a messageCtx and the node that generated it, check if the message can be retried or not. If it cannot,
      * then throw NoMoreRetriesException.
      *
-     * @param node Node that generated the message
      * @param messageCtx MessageCtx of the message that needs to be retried
      * @return <code>true</code> if retried, <code>false</code> if no more retries possible
      */
-    boolean retry(Node<I, ?> node, MessageCtx<I> messageCtx);
+    boolean retry(MessageCtx<I> messageCtx);
 }

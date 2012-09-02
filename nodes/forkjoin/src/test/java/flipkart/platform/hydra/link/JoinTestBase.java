@@ -1,13 +1,7 @@
 package flipkart.platform.hydra.link;
 
-import java.io.Console;
-import java.util.concurrent.TimeUnit;
-import com.yammer.metrics.reporting.ConsoleReporter;
-import com.yammer.metrics.reporting.CsvReporter;
-import com.yammer.metrics.reporting.JmxReporter;
-import flipkart.platform.hydra.topology.SupervisorTopology;
+import flipkart.platform.hydra.topology.LinkTopology;
 import flipkart.platform.hydra.traits.CanGroup;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -27,7 +21,7 @@ public class JoinTestBase
         {10, 10, 0},
         {0, 10, 10}
     };
-    protected SupervisorTopology topology;
+    protected LinkTopology topology;
 
     public static class Person implements CanGroup
     {
@@ -94,6 +88,6 @@ public class JoinTestBase
     @Before
     public void setUp() throws Exception
     {
-        topology = new SupervisorTopology();
+        topology = new LinkTopology();
     }
 }

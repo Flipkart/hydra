@@ -1,7 +1,7 @@
 package flipkart.platform.hydra.queue.partition;
 
-import flipkart.platform.hydra.queue.MessageCtx;
-import flipkart.platform.hydra.queue.MessageCtxBatch;
+import flipkart.platform.hydra.common.MessageCtx;
+import flipkart.platform.hydra.common.MessageCtxBatch;
 
 /**
 * User: shashwat

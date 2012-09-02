@@ -2,7 +2,6 @@ package flipkart.platform.hydra.node;
 
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicReference;
 import flipkart.platform.hydra.utils.RunState;
 
 /**
@@ -27,7 +26,7 @@ public abstract class AbstractNodeBase<I, O> implements Node<I, O>
     }
 
     @Override
-    public String getName()
+    public String getIdentity()
     {
         return name;
     }
@@ -67,7 +66,7 @@ public abstract class AbstractNodeBase<I, O> implements Node<I, O>
         }
         else
         {
-            throw new RuntimeException("Shutdown already in progress for node: " + getName());
+            throw new RuntimeException("Shutdown already in progress for node: " + getIdentity());
         }
     }
 
@@ -79,22 +78,23 @@ public abstract class AbstractNodeBase<I, O> implements Node<I, O>
 
     protected final void validateState()
     {
-        if (isDone())
+        if (!runState.isActive())
         {
             throw new RuntimeException("accept() called after shutdown()");
         }
     }
 
-    // Can override completely
+    /**
+     * Determine if all messages are consumed
+     * @return <code>true</code>
+     */
     public boolean isDone()
     {
         return (!runState.isActive());
     }
 
     // Can override completely
-    protected void shutdownResources(boolean awaitTermination) throws InterruptedException
-    {
-    }
+    protected abstract void shutdownResources(boolean awaitTermination) throws InterruptedException;
 
     protected void sendForward(O o)
     {

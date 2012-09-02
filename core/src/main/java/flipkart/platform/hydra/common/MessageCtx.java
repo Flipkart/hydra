@@ -1,4 +1,4 @@
-package flipkart.platform.hydra.queue;
+package flipkart.platform.hydra.common;
 
 /**
  * User: shashwat

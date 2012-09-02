@@ -1,6 +1,8 @@
 package flipkart.platform.hydra.queue;
 
 import com.google.common.collect.UnmodifiableIterator;
+import flipkart.platform.hydra.common.MessageCtx;
+import flipkart.platform.hydra.common.MessageCtxBatch;
 import flipkart.platform.hydra.queue.partition.EnqueuePartitionPolicy;
 import flipkart.platform.hydra.queue.partition.Partitioner;
 import flipkart.platform.hydra.queue.partition.ReadPartitionPolicy;

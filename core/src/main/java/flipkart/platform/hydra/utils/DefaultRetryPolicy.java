@@ -2,7 +2,7 @@ package flipkart.platform.hydra.utils;
 
 import flipkart.platform.hydra.node.Node;
 import flipkart.platform.hydra.node.RetryPolicy;
-import flipkart.platform.hydra.queue.MessageCtx;
+import flipkart.platform.hydra.common.MessageCtx;
 
 /**
 * User: shashwat
@@ -18,7 +18,7 @@ public class DefaultRetryPolicy<I> implements RetryPolicy<I>
     }
 
     @Override
-    public boolean retry(Node<I, ?> node, MessageCtx<I> messageCtx)
+    public boolean retry(MessageCtx<I> messageCtx)
     {
         if(messageCtx.getAttempt() < maxAttempts)
         {

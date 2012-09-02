@@ -115,7 +115,7 @@ public class JoinOnForkTest extends JoinTestBase
     private void setupJoinLink(JoinPredicate<PersonTask, Boolean> predicate) throws InterruptedException
     {
         final ForkJoinLink<PersonTask, Boolean> joinLink = new ForkJoinLink<PersonTask, Boolean>(topology, predicate);
-        joinLink.addSource(personTaskNode);
+        joinLink.addProducer(personTaskNode);
         joinLink.addFork(forkNode);
         joinLink.addConsumer(new ResultNode<ForkJoinResult<PersonTask, Boolean>>("resultNode", queue));
 

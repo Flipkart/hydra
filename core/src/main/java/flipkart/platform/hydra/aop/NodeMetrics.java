@@ -17,35 +17,36 @@ import org.aspectj.lang.annotation.Aspect;
 @Aspect
 public class NodeMetrics
 {
-    @Around("target(worker) && execution(@com.yammer.metrics.annotation.Timed * * (..)) && @annotation(annotation)")
-    public Object measureExecTime(ProceedingJoinPoint thisJoinPoint, AbstractNode.WorkerBase worker,
-        Timed annotation) throws Throwable
-    {
-        final String group = annotation.group().isEmpty() ? "nodes" : annotation.group();
-        final String type = annotation.type().isEmpty() ? worker.getName() : annotation.type();
-        final String name = annotation.name().isEmpty() ? Thread.currentThread().getName() : annotation.name();
-
-        final MetricName metricName = new MetricName(group, type, name);
-
-        final Timer timer = Metrics.newTimer(metricName,
-            annotation.durationUnit() == null ?
-                TimeUnit.MILLISECONDS : annotation.durationUnit(),
-            annotation.rateUnit() == null ?
-                TimeUnit.SECONDS : annotation.rateUnit());
-
-        final Counter counter = Metrics.newCounter(new MetricName(group, type, "current_executing"));
-
-        final TimerContext timerContext = timer.time();
-        counter.inc();
-        try
-        {
-            return thisJoinPoint.proceed();
-        }
-        finally
-        {
-            timerContext.stop();
-            counter.dec();
-        }
-    }
+    // TODO: re-implement
+    //@Around("target(node) && execution(@com.yammer.metrics.annotation.Timed * * (..)) && @annotation(annotation)")
+    //public Object measureExecTime(ProceedingJoinPoint thisJoinPoint, AbstractNode node,
+    //    Timed annotation) throws Throwable
+    //{
+    //    final String group = annotation.group().isEmpty() ? "nodes" : annotation.group();
+    //    final String type = annotation.type().isEmpty() ? node.getIdentity() : annotation.type();
+    //    final String name = annotation.name().isEmpty() ? Thread.currentThread().getName() : annotation.name();
+    //
+    //    final MetricName metricName = new MetricName(group, type, name);
+    //
+    //    final Timer timer = Metrics.newTimer(metricName,
+    //        annotation.durationUnit() == null ?
+    //            TimeUnit.MILLISECONDS : annotation.durationUnit(),
+    //        annotation.rateUnit() == null ?
+    //            TimeUnit.SECONDS : annotation.rateUnit());
+    //
+    //    final Counter counter = Metrics.newCounter(new MetricName(group, type, "current_executing"));
+    //
+    //    final TimerContext timerContext = timer.time();
+    //    counter.inc();
+    //    try
+    //    {
+    //        return thisJoinPoint.proceed();
+    //    }
+    //    finally
+    //    {
+    //        timerContext.stop();
+    //        counter.dec();
+    //    }
+    //}
 
 }

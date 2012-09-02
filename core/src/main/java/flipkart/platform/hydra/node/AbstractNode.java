@@ -1,13 +1,11 @@
 package flipkart.platform.hydra.node;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-import com.yammer.metrics.annotation.Timed;
+import flipkart.platform.hydra.common.AbstractJobExecutionContext;
+import flipkart.platform.hydra.common.JobExecutionContext;
 import flipkart.platform.hydra.job.Job;
 import flipkart.platform.hydra.job.JobFactory;
 import flipkart.platform.hydra.job.JobObjectFactory;
 import flipkart.platform.hydra.queue.HQueue;
-import flipkart.platform.hydra.queue.MessageCtx;
 import flipkart.platform.hydra.utils.RefCounter;
 import flipkart.platform.hydra.utils.ThreadLocalRepository;
 
@@ -25,17 +23,15 @@ public abstract class AbstractNode<I, O, J extends Job<I>> extends AbstractNodeB
 {
     protected final HQueue<I> queue;
 
-    private final ExecutorService executorService;
     private final RetryPolicy<I> retryPolicy;
     private final ThreadLocalRepository<J> threadLocalJobRepository;
     private final RefCounter activeWorkers = new RefCounter(0);
 
-    protected AbstractNode(String name, ExecutorService executorService, HQueue<I> queue, RetryPolicy<I> retryPolicy,
+    protected AbstractNode(String name, HQueue<I> queue, RetryPolicy<I> retryPolicy,
         JobFactory<? extends J> jobFactory)
     {
         super(name);
         this.queue = queue;
-        this.executorService = executorService;
         this.retryPolicy = retryPolicy;
 
         this.threadLocalJobRepository = ThreadLocalRepository.from(JobObjectFactory.from(jobFactory));
@@ -50,73 +46,49 @@ public abstract class AbstractNode<I, O, J extends Job<I>> extends AbstractNodeB
     protected void acceptMessage(I i)
     {
         queue.enqueue(i);
-        scheduleWorker();
-    }
-
-    protected void executeWorker(WorkerBase worker)
-    {
-        executorService.execute(worker);
+        scheduleJob();
     }
 
     protected void shutdownResources(boolean awaitTermination) throws InterruptedException
     {
-        executorService.shutdown();
-        while (awaitTermination
-            && !executorService.awaitTermination(10, TimeUnit.MILLISECONDS))
-            ;
-
         threadLocalJobRepository.close();
     }
 
-    protected abstract void scheduleWorker();
+    protected abstract void scheduleJob();
 
-    public abstract class WorkerBase implements Runnable, JobContext<I, O, J>
+    protected JobExecutionContext<I, O, J> newJobExecutionContext()
     {
-        @Timed
-        public void run()
+        return new AbstractJobExecutionContext<I, O, J>(retryPolicy)
         {
-            activeWorkers.offer();
-            final J j = threadLocalJobRepository.get();
-            try
+            @Override
+            public J begin()
+            {
+                final J j = threadLocalJobRepository.get();
+                if (j != null)
+                {
+                    activeWorkers.offer();
+                }
+                return j;
+            }
+
+            @Override
+            public void end(J j)
             {
                 if (j != null)
                 {
-                    execute(j);
+                    activeWorkers.take();
                 }
             }
-            finally
+
+            @Override
+            public void submitResponse(O o)
             {
-                activeWorkers.take();
+                if (o != null)
+                {
+                    AbstractNode.this.sendForward(o);
+                }
             }
-        }
-
-        public String getName()
-        {
-            return AbstractNode.this.getName();
-        }
-
-        protected abstract void execute(J j);
-
-        public void sendForward(O o)
-        {
-            AbstractNode.this.sendForward(o);
-        }
-
-        public void retryMessage(J j, MessageCtx<I> messageCtx, Throwable t)
-        {
-            if (!retryPolicy.retry(AbstractNode.this, messageCtx))
-            {
-                discardMessage(j, messageCtx, t);
-            }
-            // TODO: log
-        }
-
-        public void discardMessage(J j, MessageCtx<I> messageCtx, Throwable t)
-        {
-            // TODO: log
-            messageCtx.discard(MessageCtx.DiscardAction.REJECT);
-            j.failed(messageCtx.get(), t);
-        }
+        };
     }
 
 }

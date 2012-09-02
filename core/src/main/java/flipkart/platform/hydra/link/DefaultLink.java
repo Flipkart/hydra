@@ -1,7 +1,7 @@
 package flipkart.platform.hydra.link;
 
 import flipkart.platform.hydra.node.Node;
-import flipkart.platform.hydra.topology.Topology;
+import flipkart.platform.hydra.topology.LinkTopology;
 
 /**
  * A class that implements default {@link Link} that can have more than one attached nodes and can onNewMessage messages to
@@ -11,17 +11,17 @@ import flipkart.platform.hydra.topology.Topology;
  */
 public class DefaultLink<T> extends AbstractLink<T, T> implements Link<T>
 {
-    public static <T> DefaultLink<T> from(Topology topology, Selector<T> selector)
+    public static <T> DefaultLink<T> from(LinkTopology topology, Selector<T> selector)
     {
         return new DefaultLink<T>(topology, selector);
     }
 
-    public DefaultLink(Topology topology)
+    public DefaultLink(LinkTopology topology)
     {
         super(topology);
     }
 
-    public DefaultLink(Topology topology, Selector<T> selector)
+    public DefaultLink(LinkTopology topology, Selector<T> selector)
     {
         super(topology, selector);
     }

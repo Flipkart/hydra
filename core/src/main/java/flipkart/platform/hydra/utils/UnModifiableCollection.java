@@ -3,7 +3,6 @@ package flipkart.platform.hydra.utils;
 import java.util.Collection;
 import java.util.Iterator;
 import com.google.common.collect.Iterators;
-import flipkart.platform.hydra.supervisor.Supervisor;
 
 /**
  * User: shashwat
@@ -47,8 +46,8 @@ public class UnModifiableCollection<I> implements Iterable<I>
         return collection.containsAll(c);
     }
 
-    public static <I> UnModifiableCollection<I> from(Collection<I> values)
+    public static <I> UnModifiableCollection<I> from(Collection<? extends I> values)
     {
-        return new UnModifiableCollection<I>(values);
+        return new UnModifiableCollection<I>((Collection<I>) values);
     }
 }

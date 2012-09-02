@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.UnmodifiableIterator;
+import flipkart.platform.hydra.common.MessageCtx;
+import flipkart.platform.hydra.common.MessageCtxBatch;
 import flipkart.platform.hydra.utils.RefCounter;
 
 /**

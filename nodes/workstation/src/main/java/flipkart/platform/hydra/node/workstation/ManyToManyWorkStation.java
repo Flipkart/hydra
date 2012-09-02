@@ -4,14 +4,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import flipkart.platform.hydra.job.ExecutionFailureException;
+import flipkart.platform.hydra.common.JobExecutionContext;
+import flipkart.platform.hydra.common.MessageCtx;
+import flipkart.platform.hydra.common.MessageCtxBatch;
 import flipkart.platform.hydra.job.JobFactory;
 import flipkart.platform.hydra.jobs.ManyToManyJob;
 import flipkart.platform.hydra.node.AbstractNode;
 import flipkart.platform.hydra.node.RetryPolicy;
 import flipkart.platform.hydra.queue.HQueue;
-import flipkart.platform.hydra.queue.MessageCtx;
-import flipkart.platform.hydra.queue.MessageCtxBatch;
 import flipkart.platform.hydra.utils.RefCounter;
 
 /**
@@ -24,7 +24,7 @@ import flipkart.platform.hydra.utils.RefCounter;
  * @param <O>
  * @author shashwat
  */
-public class ManyToManyWorkStation<I, O> extends AbstractNode<I, O, ManyToManyJob<I, O>>
+public class ManyToManyWorkStation<I, O> extends WorkStationBase<I, O, ManyToManyJob<I, O>>
 {
     private final int maxJobsToGroup;
     private final long maxDelay;
@@ -32,10 +32,12 @@ public class ManyToManyWorkStation<I, O> extends AbstractNode<I, O, ManyToManyJo
     private final RefCounter jobsInQueue = new RefCounter(0);
     private final SchedulerThread schedulerThread = new SchedulerThread();
 
-    public ManyToManyWorkStation(String name, ExecutorService executorService, HQueue<I> queue, RetryPolicy<I> retryPolicy,
-        JobFactory<? extends ManyToManyJob<I, O>> jobFactory, int maxJobsToGroup, long maxDelayMs)
+    public ManyToManyWorkStation(String name, ExecutorService executorService, HQueue<I> queue,
+        RetryPolicy<I> retryPolicy, JobFactory<? extends ManyToManyJob<I, O>> jobFactory, int maxJobsToGroup,
+        long maxDelayMs)
     {
-        super(name, executorService, queue, retryPolicy, jobFactory);
+        super(name,
+            executorService, queue, retryPolicy, jobFactory);
         if (maxJobsToGroup <= 1 || maxDelayMs < 0)
         {
             throw new IllegalArgumentException("Illegal int arguments to: " + getClass().getSimpleName());
@@ -46,7 +48,7 @@ public class ManyToManyWorkStation<I, O> extends AbstractNode<I, O, ManyToManyJo
     }
 
     @Override
-    protected void scheduleWorker()
+    protected void scheduleJob()
     {
         final long currentJobsCount = jobsInQueue.offer();
         if (currentJobsCount == maxJobsToGroup)
@@ -88,7 +90,7 @@ public class ManyToManyWorkStation<I, O> extends AbstractNode<I, O, ManyToManyJo
                         break;
                     try
                     {
-                        executeWorker(new ManyToManyWorker(jobsCommitted));
+                        executeWorker(new ManyToManyWorker(newJobExecutionContext(), queue.read(jobsCommitted)));
                     }
                     catch (Exception e)
                     {
@@ -105,23 +107,25 @@ public class ManyToManyWorkStation<I, O> extends AbstractNode<I, O, ManyToManyJo
         }
     }
 
-    private class ManyToManyWorker extends WorkerBase
+    private static class ManyToManyWorker<I, O> implements Runnable
     {
-        private final int jobsCommitted;
+        private final JobExecutionContext<I, O, ManyToManyJob<I, O>> jobExecutionContext;
+        private final MessageCtxBatch<I> messageCtxBatch;
 
-        private ManyToManyWorker(int jobsCommitted)
+        private ManyToManyWorker(JobExecutionContext<I, O, ManyToManyJob<I, O>> jobExecutionContext,
+            MessageCtxBatch<I> messageCtxBatch)
         {
-            this.jobsCommitted = jobsCommitted;
+            this.jobExecutionContext = jobExecutionContext;
+            this.messageCtxBatch = messageCtxBatch;
         }
 
         @Override
-        protected void execute(ManyToManyJob<I, O> job)
+        public void run()
         {
-            if (jobsCommitted > 0)
+            final ManyToManyJob<I, O> job = jobExecutionContext.begin();
+            if (job != null && !messageCtxBatch.isEmpty())
             {
-                final MessageCtxBatch<I> messageCtxBatch = queue.read(jobsCommitted);
-
-                final List<I> jobList = new ArrayList<I>(jobsCommitted);
+                final List<I> jobList = new ArrayList<I>(messageCtxBatch.size());
                 for (MessageCtx<I> messageCtx : messageCtxBatch)
                 {
                     jobList.add(messageCtx.get());
@@ -132,30 +136,27 @@ public class ManyToManyWorkStation<I, O> extends AbstractNode<I, O, ManyToManyJo
                     final Collection<O> outList = job.execute(jobList);
                     for (O o : outList)
                     {
-                        sendForward(o);
+                        jobExecutionContext.submitResponse(o);
                     }
 
                     for (MessageCtx<I> messageCtx : messageCtxBatch)
                     {
-                        messageCtx.ack();
+                        jobExecutionContext.succeeded(job, messageCtx);
                     }
+
                     messageCtxBatch.commit();
-                }
-                catch (ExecutionFailureException ex)
-                {
-                    for (MessageCtx<I> messageCtx : messageCtxBatch)
-                    {
-                        retryMessage(job, messageCtx, ex);
-                    }
                 }
                 catch (Exception ex)
                 {
                     for (MessageCtx<I> messageCtx : messageCtxBatch)
                     {
-                        discardMessage(job, messageCtx, ex);
+                        jobExecutionContext.failed(job, messageCtx, ex);
                     }
                 }
-
+                finally
+                {
+                    jobExecutionContext.end(job);
+                }
             }
         }
     }

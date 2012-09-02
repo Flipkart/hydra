@@ -9,7 +9,7 @@ import flipkart.platform.hydra.node.workstation.OneToManyWorkStation;
  * User: shashwat
  * Date: 03/08/12
  */
-public class O2MNodeBuilder<I, O> extends AbstractNodeBuilder<I, O>
+public class O2MNodeBuilder<I, O> extends AbstractWorkStationBuilder<I, O>
 {
     private final JobFactory<? extends OneToManyJob<I, O>> jobFactory;
 
