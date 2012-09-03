@@ -4,9 +4,7 @@ package flipkart.platform.hydra.traits;
  * Interface for initialize-able classes. The object will be initialized using
  * {@link #init()} before being used. {@link #destroy()} is called once object
  * is no more required.
- * 
- * All jobs are required to be Initializable.
- * 
+ *
  * @author shashwat
  * 
  */

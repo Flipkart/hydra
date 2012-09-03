@@ -2,7 +2,9 @@ package flipkart.platform.hydra.node;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
 import com.google.common.collect.Maps;
+import com.yammer.metrics.reporting.ConsoleReporter;
 import flipkart.platform.hydra.job.AbstractJob;
 import flipkart.platform.hydra.job.ExecutionFailureException;
 import flipkart.platform.hydra.jobs.ManyToManyJob;
@@ -10,6 +12,7 @@ import flipkart.platform.hydra.jobs.OneToManyJob;
 import flipkart.platform.hydra.jobs.OneToOneJob;
 import flipkart.platform.hydra.topology.LinkTopology;
 import org.junit.Before;
+import org.junit.BeforeClass;
 
 import static org.junit.Assert.assertFalse;
 
@@ -181,5 +184,11 @@ public class TestBase
     public void setUp() throws Exception
     {
         topology = new LinkTopology();
+    }
+
+    @BeforeClass
+    public static void setupClass() throws Exception
+    {
+        //ConsoleReporter.enable(10, TimeUnit.MILLISECONDS);
     }
 }
