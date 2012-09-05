@@ -61,7 +61,7 @@ public abstract class AbstractNode<I, O, J extends Job<I>> extends AbstractNodeB
         return new NodeJobExecutionContext(retryPolicy);
     }
 
-    private class NodeJobExecutionContext extends AbstractJobExecutionContext<I, O, J>
+    protected class NodeJobExecutionContext extends AbstractJobExecutionContext<I, O, J>
     {
         public NodeJobExecutionContext(RetryPolicy<I> retryPolicy)
         {
@@ -97,6 +97,12 @@ public abstract class AbstractNode<I, O, J extends Job<I>> extends AbstractNodeB
             {
                 AbstractNode.this.sendForward(o);
             }
+        }
+
+        @Override
+        protected void scheduleRetryJob()
+        {
+            scheduleJob();
         }
     }
 }

@@ -14,7 +14,7 @@ public abstract class AbstractNodeBuilder<I, O> implements NodeBuilder<I,O>
 {
     protected String name = "";
     protected RetryPolicy<I> retryPolicy = new NoRetryPolicy<I>();
-    protected HQueue<I> queue = new ConcurrentQueue<I>();
+    protected HQueue<I> queue = ConcurrentQueue.newQueue();
 
     public AbstractNodeBuilder(String name)
     {

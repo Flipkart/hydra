@@ -5,7 +5,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import flipkart.platform.hydra.link.GenericLink;
 import flipkart.platform.hydra.node.Node;
-import flipkart.platform.hydra.traits.CanDestroy;
 import flipkart.platform.hydra.traits.CanShutdown;
 import flipkart.platform.hydra.utils.RunState;
 import flipkart.platform.hydra.utils.UnModifiableCollection;
@@ -17,18 +16,7 @@ import flipkart.platform.hydra.utils.UnModifiableCollection;
 public class LinkTopology implements CanShutdown
 {
     private final Set<GenericLink> linkSet = Sets.newSetFromMap(Maps.<GenericLink, Boolean>newConcurrentMap());
-    private final NodeShutdownPolicy policy;
     private final RunState runState = new RunState();
-
-    public LinkTopology(NodeShutdownPolicy policy)
-    {
-        this.policy = policy;
-    }
-
-    public LinkTopology()
-    {
-        this(new DefaultNodeShutdownPolicy());
-    }
 
     public LinkTopology addLink(GenericLink link)
     {
@@ -53,11 +41,23 @@ public class LinkTopology implements CanShutdown
             final Collection<Node> nodes = topologicalSort(linkSet);
             for (Node node : nodes)
             {
-                policy.shutdown(node, awaitTermination);
+                shutdownNode(node, awaitTermination);
             }
             runState.shutdown();
         }
         return true;
+    }
+
+    private static void shutdownNode(Node node, boolean awaitTermination)
+    {
+        try
+        {
+            node.shutdown(awaitTermination);
+        }
+        catch (InterruptedException e)
+        {
+            // do nothing
+        }
     }
 
     private static Collection<Node> topologicalSort(Collection<GenericLink> genericLinks)

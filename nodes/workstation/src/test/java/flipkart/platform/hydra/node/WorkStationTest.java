@@ -1,17 +1,18 @@
 package flipkart.platform.hydra.node;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.MoreExecutors;
+import flipkart.platform.hydra.job.JobFactory;
 import flipkart.platform.hydra.link.DefaultLink;
 import flipkart.platform.hydra.link.GenericLink;
 import flipkart.platform.hydra.link.Selector;
 import flipkart.platform.hydra.node.builder.WSBuilder;
-import flipkart.platform.hydra.utils.HydraThreadFactory;
-import flipkart.platform.hydra.utils.Once;
-import flipkart.platform.hydra.utils.UnModifiableMap;
+import flipkart.platform.hydra.node.workstation.BasicWorkStation;
+import flipkart.platform.hydra.queue.ConcurrentQueue;
+import flipkart.platform.hydra.utils.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,7 +50,7 @@ public class WorkStationTest extends TestBase
 
         splitLineNode = WSBuilder.withO2MJob(SentenceToLines.class).build();
         splitWordNode = WSBuilder.withO2MJob(LinesToWords.class).build();
-        freqNode = WSBuilder.withM2MJob(CalculateWordFrequency.class).build();
+        freqNode = WSBuilder.withM2MJob(CalculateWordFrequency.class).withBatch(5, 5).build();
         wordSanitizer = WSBuilder.withO2OJob(WordSanitizer.class).build();
 
         toUpper = WSBuilder.withO2OJob(ToUpperCase.class).build();
@@ -83,10 +84,12 @@ public class WorkStationTest extends TestBase
     /**
      * Some shutdown guarantees at the end of single topology shutdown
      * <ul>
-     *     <li>all the nodes are in shutdown state</li>
-     *     <li>links have no producers and no consumers</li>
+     * <li>all the nodes are in shutdown state</li>
+     * <li>links have no producers and no consumers</li>
      * </ul>
-     * @throws Exception exception
+     *
+     * @throws Exception
+     *     exception
      */
     @Test
     public void testShutdownGuarantees() throws Exception
@@ -109,7 +112,7 @@ public class WorkStationTest extends TestBase
         topology.shutdown(true);
 
         assertTrue("topology.isShutdown should return true", topology.isShutdown());
-        for (Node node : Arrays.<Node> asList(splitLineNode, splitWordNode, freqNode, mergeNode))
+        for (Node node : Arrays.<Node>asList(splitLineNode, splitWordNode, freqNode, mergeNode))
         {
             assertTrue("Node (" + node.getIdentity() + ") .isShutdown should return true", node.isShutdown());
         }
@@ -249,7 +252,7 @@ public class WorkStationTest extends TestBase
         final int numThreads = threadGroup.enumerate(threads);
         assertTrue("There should be more than 1 thread in " + namePrefix + " thread group", numThreads > 0);
         boolean foundThread = false;
-        for (int i = 0 ; i < numThreads; ++i)
+        for (int i = 0; i < numThreads; ++i)
         {
             foundThread = foundThread || threads[i].getName().startsWith(namePrefix);
         }
@@ -264,11 +267,11 @@ public class WorkStationTest extends TestBase
         final int numThreads = threadGroup.enumerate(threads);
         assertTrue("There should be >=0 thread in " + namePrefix + " thread group", 0 <= numThreads);
         boolean foundThread = false;
-        for (int i = 0 ; i < numThreads; ++i)
+        for (int i = 0; i < numThreads; ++i)
         {
             foundThread = foundThread || threads[i].getName().startsWith(namePrefix);
         }
-        assertFalse("Thread that begins with: " + namePrefix + " should have been stopped", foundThread);
+        assertFalse("Thread that begins with \'" + namePrefix + "\' should have been stopped", foundThread);
     }
 
     private void printWordFrequencyMap()
@@ -297,5 +300,155 @@ public class WorkStationTest extends TestBase
         }
     }
 
-    // TODO: test failure and retry
+    private static class TestJobFactoryWrapper<J> implements JobFactory<J>
+    {
+        private final List<J> list = Lists.newLinkedList();
+        private final JobFactory<J> jobFactory;
+
+        public TestJobFactoryWrapper(JobFactory<J> jobFactory)
+        {
+            this.jobFactory = jobFactory;
+        }
+
+        @Override
+        public J newJob()
+        {
+            final J j = jobFactory.newJob();
+            list.add(j);
+            return j;
+        }
+
+        public UnModifiableCollection<J> getJobList()
+        {
+            return UnModifiableCollection.from(list);
+        }
+    }
+
+    @Test
+    public void testInitializableJobInThreadExecutorNode() throws Exception
+    {
+        final int numThreads = 2;
+        final CountDownLatch latch = new CountDownLatch(numThreads);
+
+        final TestJobFactoryWrapper<InitializableJob> testJobFactory =
+            new TestJobFactoryWrapper(new InitializableJob.Factory(latch));
+
+        final Node<String, String> node = WSBuilder.withO2OJobFactory("InitializableJob", testJobFactory)
+            .withThreadExecutor(numThreads).build();
+
+        for (int i = 0; i < 10; ++i)
+        {
+            node.accept("something-" + i);
+        }
+        node.shutdown(true);
+        latch.await();
+
+        final UnModifiableCollection<InitializableJob> jobList = testJobFactory.getJobList();
+        assertTrue("Job instances count should not be greater equal to number of threads",
+            numThreads >= jobList.size());
+
+        for (InitializableJob job : jobList)
+        {
+            assertEquals("Init counter should be 1.", 1, job.initCounter.get());
+            assertEquals("Destroy counter should be 1", 1, job.destroyCounter.get());
+            assertTrue("init() must be called before destroy()",
+                job.initBeforeDestroy.isSet() && job.initBeforeDestroy.get());
+            assertTrue("init() must be called before execute()",
+                job.initBeforeExecute.isSet() && job.initBeforeExecute.get());
+        }
+    }
+
+    @Test
+    public void testNoRetry() throws Exception
+    {
+        final int maxRetries = 3;
+        final int maxFailures = maxRetries - 1;
+
+        final RetryPolicy<String> retryPolicy = new NoRetryPolicy<String>();
+        final TestJobFactoryWrapper<AlwaysFailingTestJob> testJobFactoryWrapper =
+            new TestJobFactoryWrapper(new AlwaysFailingTestJob.Factory(maxFailures));
+
+        executeInitializableJobTestNode(retryPolicy, testJobFactoryWrapper);
+
+        final UnModifiableCollection<AlwaysFailingTestJob> jobList = testJobFactoryWrapper.getJobList();
+        for (AlwaysFailingTestJob job : jobList)
+        {
+            assertEquals("Job execution count should be 1", 1, job.executionCounter.get());
+            assertTrue("Job is marked as failed and failed() is called after execute()",
+                job.failedCalledAfterExecute.isSet() && job.failedCalledAfterExecute.get());
+        }
+    }
+
+    @Test
+    public void testRetryAndRecover() throws Exception
+    {
+        final int maxRetries = 4;
+        final int maxFailures = maxRetries - 2;
+
+        final RetryPolicy<String> retryPolicy = new DefaultRetryPolicy<String>(maxRetries);
+
+        final TestJobFactoryWrapper<AlwaysFailingTestJob> testJobFactoryWrapper =
+            new TestJobFactoryWrapper(new AlwaysFailingTestJob.Factory(maxFailures));
+
+        executeInitializableJobTestNode(retryPolicy, testJobFactoryWrapper);
+
+        final UnModifiableCollection<AlwaysFailingTestJob> jobList = testJobFactoryWrapper.getJobList();
+        for (AlwaysFailingTestJob job : jobList)
+        {
+            assertEquals("Execution count should be 3. Check if the job re-executed.", maxFailures + 1,
+                job.executionCounter.get());
+            assertFalse("Job should succeed", job.failedCalledAfterExecute.isSet());
+        }
+    }
+
+    @Test
+    public void testJobFailureAfterRetry() throws Exception
+    {
+        final int maxRetries = 4;
+
+        final RetryPolicy<String> retryPolicy = new DefaultRetryPolicy<String>(maxRetries);
+
+        final TestJobFactoryWrapper<AlwaysFailingTestJob> testJobFactoryWrapper =
+            new TestJobFactoryWrapper(new AlwaysFailingTestJob.Factory(maxRetries));
+
+        executeInitializableJobTestNode(retryPolicy, testJobFactoryWrapper);
+
+        final UnModifiableCollection<AlwaysFailingTestJob> jobList = testJobFactoryWrapper.getJobList();
+        for (AlwaysFailingTestJob job : jobList)
+        {
+            assertEquals("Execution count should be 3. Check if the job re-executed.", maxRetries,
+                job.executionCounter.get());
+            assertTrue("Job should fail", job.failedCalledAfterExecute.isSet() && job.failedCalledAfterExecute.get());
+        }
+    }
+
+    private void executeInitializableJobTestNode(RetryPolicy<String> retryPolicy,
+        TestJobFactoryWrapper<AlwaysFailingTestJob> testJobFactoryWrapper) throws
+        NoSuchMethodException, InterruptedException
+    {
+        final Node<String, String> node =
+            WSBuilder.withO2OJobFactory("AlwaysFailingTestJob", testJobFactoryWrapper).withRetry(
+                retryPolicy).build();
+
+        node.accept("something");
+        node.shutdown(true);
+    }
+
+    @Test
+    public void testBasicJob() throws Exception
+    {
+        final Node<String, String> basic =
+            new BasicWorkStation("basic", MoreExecutors.sameThreadExecutor(), ConcurrentQueue.newQueue(),
+                DefaultJobFactory.create(BasicJobImpl.class));
+        basic.accept("world");
+        basic.shutdown(true);
+    }
+
+    // TODO: test queue lifecycles are properly set, create a mock HQueue
+
+    // TODO: Test executeWorker() (such as RejectionException is thrown on queue full) call failures are handled
+    // properly
+
+    // TODO: Test ManyToManyJob -> batch size never violated
+    // TODO: Test ManyToManyJob -> executeWorker() call failures are handled properly
 }

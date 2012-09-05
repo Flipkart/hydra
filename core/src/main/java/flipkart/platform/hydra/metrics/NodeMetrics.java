@@ -3,6 +3,7 @@ package flipkart.platform.hydra.metrics;
 import java.util.concurrent.TimeUnit;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.*;
+import flipkart.platform.hydra.utils.Measure;
 
 /**
  * User: shashwat
@@ -20,10 +21,11 @@ public class NodeMetrics
     private final Counter activeJobCounter;
     private final Timer jobProcessingTime;
     private final Timer messageWaitTimer;
-    private Counter messageSuccessCounter;
-    private Counter messageFailureCounter;
+    private Meter messageSuccessMeter;
+    private Meter messageFailureMeter;
     private final Histogram messageAttemptsHistogram;
     private Meter messageProcessedMeter;
+    private final Measure messageFailureToSuccessMeasure;
 
     public NodeMetrics(String scope)
     {
@@ -36,8 +38,13 @@ public class NodeMetrics
 
         this.activeJobCounter = Metrics.newCounter(new MetricName(team, "node", "jobs_active", scope));
 
-        this.messageSuccessCounter = Metrics.newCounter(new MetricName(team, "node", "messages_success_count", scope));
-        this.messageFailureCounter = Metrics.newCounter(new MetricName(team, "node", "messages_failure_count", scope));
+        this.messageSuccessMeter = Metrics
+            .newMeter(new MetricName(team, "node", "messages_success_rate", scope), "messages_succeeded",
+                TimeUnit.SECONDS);
+        this.messageFailureMeter = Metrics
+            .newMeter(new MetricName(team, "node", "messages_failure_rate", scope), "messages_failed",
+                TimeUnit.SECONDS);
+        this.messageFailureToSuccessMeasure = new Measure(messageFailureMeter, messageSuccessMeter);
 
         this.messageProcessedMeter = Metrics
             .newMeter(new MetricName(team, "node", "messages_processing_rate", scope), "messages_processed",
@@ -73,10 +80,10 @@ public class NodeMetrics
         switch (succeeded)
         {
         case FAILED:
-            messageFailureCounter.inc();
+            messageFailureMeter.mark();
             break;
         case SUCCEEDED:
-            messageSuccessCounter.inc();
+            messageSuccessMeter.mark();
             break;
         }
     }

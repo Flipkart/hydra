@@ -5,7 +5,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import com.google.common.collect.Queues;
-import flipkart.platform.hydra.node.AbstractControlNodeEventListener;
+import flipkart.platform.hydra.node.AbstractControlEventListener;
 import flipkart.platform.hydra.node.Node;
 import flipkart.platform.hydra.node.NodeEventListener;
 import flipkart.platform.hydra.topology.LinkTopology;
@@ -179,7 +179,7 @@ public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
     /**
      * @param <O>
      */
-    private class ConsumerNodeListener<O> extends AbstractControlNodeEventListener<O>
+    private class ConsumerNodeListener<O> extends AbstractControlEventListener<O>
     {
         @Override
         @SuppressWarnings("unchecked")

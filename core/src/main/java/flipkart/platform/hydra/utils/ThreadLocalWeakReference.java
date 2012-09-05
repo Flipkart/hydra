@@ -22,34 +22,16 @@ import flipkart.platform.hydra.traits.Initializable;
  */
 public final class ThreadLocalWeakReference<T> extends FinalizableWeakReference<Thread>
 {
-    private static final Set<Reference> finalizableSet =
-        Sets.newSetFromMap(new ConcurrentHashMap<Reference, Boolean>());
-
     private static final FinalizableReferenceQueue referenceQueue = new FinalizableReferenceQueue();
 
-    static
-    {
-        Runtime.getRuntime().addShutdownHook(new Thread()
-        {
-            @Override
-            public void run()
-            {
-                // we need a copy here to avoid concurrent modification exception
-                final Reference[] references = finalizableSet.toArray(new Reference[finalizableSet.size()]);
-                for (Reference reference : references)
-                {
-                    reference.enqueue();
-                }
-            }
-        });
-    }
-
     private final T ob;
+    private final Set<Reference> referenceSet;
 
-    public ThreadLocalWeakReference(T ob)
+    public ThreadLocalWeakReference(T ob, Set<Reference> referenceSet)
     {
         super(Thread.currentThread(), referenceQueue);
-        finalizableSet.add(this);
+        this.referenceSet = referenceSet;
+        referenceSet.add(this);
 
         this.ob = ob;
     }
@@ -57,7 +39,7 @@ public final class ThreadLocalWeakReference<T> extends FinalizableWeakReference<
     @Override
     public void finalizeReferent()
     {
-        finalizableSet.remove(this);
+        referenceSet.remove(this);
         Initializable.LifeCycle.destroy(ob);
     }
 

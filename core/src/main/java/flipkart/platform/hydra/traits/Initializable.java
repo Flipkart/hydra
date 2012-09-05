@@ -15,7 +15,7 @@ public interface Initializable extends CanDestroy
      */
     public void init();
 
-    class LifeCycle
+    abstract class LifeCycle
     {
         public static <T> void initialize(T t)
         {
@@ -31,6 +31,10 @@ public interface Initializable extends CanDestroy
             {
                 ((Initializable)t).destroy();
             }
+        }
+
+        private LifeCycle()
+        {
         }
     }
 

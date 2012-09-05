@@ -11,7 +11,7 @@ import flipkart.platform.hydra.topology.LinkTopology;
  */
 public class DefaultLink<T> extends AbstractLink<T, T> implements Link<T>
 {
-    public static <T> DefaultLink<T> from(LinkTopology topology, Selector<T> selector)
+    public static <T> DefaultLink<T> using(LinkTopology topology, Selector<T> selector)
     {
         return new DefaultLink<T>(topology, selector);
     }

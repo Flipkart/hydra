@@ -44,8 +44,7 @@ public class BasicWorkStation<I, O> extends WorkStationBase<I, O, BasicJob<I, O>
         public void run()
         {
             final BasicJob<I, O> job = jobExecutionContext.begin();
-            final I i = messageCtx.get();
-            job.execute(i, jobExecutionContext);
+            job.execute(messageCtx, jobExecutionContext);
         }
 
     }

@@ -39,6 +39,12 @@ public abstract class AbstractJobExecutionContext<I, O, J extends Job<I>> implem
             messageCtx.discard(MessageCtx.DiscardAction.REJECT);
             j.failed(messageCtx.get(), t);
         }
+        else
+        {
+            scheduleRetryJob();
+        }
         metrics.reportMessageProcessed(NodeMetrics.Result.FAILED);
     }
+
+    protected abstract void scheduleRetryJob();
 }

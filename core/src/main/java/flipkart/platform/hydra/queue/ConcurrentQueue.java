@@ -27,7 +27,12 @@ public class ConcurrentQueue<I> implements HQueue<I>
     @Override
     public void enqueue(I i)
     {
-        backingQueue.add(new SimpleMessageCtx(i));
+        enqueue(new SimpleMessageCtx(i));
+    }
+
+    protected void enqueue(MessageCtx<I> i)
+    {
+        backingQueue.add(i);
         counter.offer();
     }
 

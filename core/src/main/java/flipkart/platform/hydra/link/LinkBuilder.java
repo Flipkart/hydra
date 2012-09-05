@@ -13,7 +13,7 @@ public class LinkBuilder<O>
 
     public LinkBuilder(LinkTopology topology, Selector<O> selector)
     {
-        this.link = new DefaultLink<O>(topology, selector);
+        this.link = DefaultLink.using(topology, selector);
     }
 
     public LinkBuilder(LinkTopology topology)

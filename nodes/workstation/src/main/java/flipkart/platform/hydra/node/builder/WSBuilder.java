@@ -1,7 +1,5 @@
 package flipkart.platform.hydra.node.builder;
 
-import java.util.concurrent.ExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
 import flipkart.platform.hydra.job.JobFactory;
 import flipkart.platform.hydra.jobs.ManyToManyJob;
 import flipkart.platform.hydra.jobs.OneToManyJob;
@@ -14,8 +12,6 @@ import flipkart.platform.hydra.utils.DefaultJobFactory;
  */
 public class WSBuilder
 {
-    protected ExecutorService executorService = MoreExecutors.sameThreadExecutor();
-
     private WSBuilder()
     {
     }

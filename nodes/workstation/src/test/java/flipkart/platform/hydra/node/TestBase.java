@@ -2,15 +2,22 @@ package flipkart.platform.hydra.node;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
 import com.google.common.collect.Maps;
-import com.yammer.metrics.reporting.ConsoleReporter;
+import flipkart.platform.hydra.common.JobExecutionContext;
+import flipkart.platform.hydra.common.MessageCtx;
 import flipkart.platform.hydra.job.AbstractJob;
+import flipkart.platform.hydra.job.BasicJob;
 import flipkart.platform.hydra.job.ExecutionFailureException;
+import flipkart.platform.hydra.job.JobFactory;
 import flipkart.platform.hydra.jobs.ManyToManyJob;
 import flipkart.platform.hydra.jobs.OneToManyJob;
 import flipkart.platform.hydra.jobs.OneToOneJob;
 import flipkart.platform.hydra.topology.LinkTopology;
+import flipkart.platform.hydra.traits.Initializable;
+import flipkart.platform.hydra.utils.Once;
 import org.junit.Before;
 import org.junit.BeforeClass;
 
@@ -29,6 +36,7 @@ public class TestBase
         @Override
         public void failed(I i, Throwable cause)
         {
+            super.failed(i, cause);
             System.out.println("Job failed!! " + i);
             cause.printStackTrace();
             assertFalse("No jobs can fail!!!!", true);
@@ -178,6 +186,126 @@ public class TestBase
             // Test will fail while shutting down, so no asserts
         }
 
+    }
+
+    public static class InitializableJob extends TestAbstractJob<String> implements OneToOneJob<String, String>,
+        Initializable
+    {
+        public static class Factory implements JobFactory<InitializableJob>
+        {
+            private final CountDownLatch destroyLatch;
+
+            public Factory(CountDownLatch destroyLatch)
+            {
+                this.destroyLatch = destroyLatch;
+            }
+
+            @Override
+            public InitializableJob newJob()
+            {
+                return new InitializableJob(destroyLatch);
+            }
+        }
+
+        private final CountDownLatch destroyLatch;
+        public final AtomicInteger initCounter = new AtomicInteger(0);
+        public final AtomicInteger destroyCounter = new AtomicInteger(0);
+        public final Once<Boolean> initBeforeExecute = new Once<Boolean>();
+        public final Once<Boolean> initBeforeDestroy = new Once<Boolean>();
+
+        public InitializableJob(CountDownLatch destroyLatch)
+        {
+            this.destroyLatch = destroyLatch;
+        }
+
+        @Override
+        public String execute(String s) throws ExecutionFailureException
+        {
+            initBeforeExecute.set(initCounter.get() != 0);
+            return s;
+        }
+
+        @Override
+        public void init()
+        {
+            initCounter.incrementAndGet();
+        }
+
+        @Override
+        public void destroy()
+        {
+            try
+            {
+                initBeforeDestroy.set(initCounter.get() != 0);
+                destroyCounter.incrementAndGet();
+                destroyLatch.countDown();
+            }
+            catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Test failures
+     */
+    public static class AlwaysFailingTestJob implements OneToOneJob<String, String>
+    {
+        public static class Factory implements JobFactory<AlwaysFailingTestJob>
+        {
+            private final int maxNumFailures;
+
+            public Factory(int maxNumFailures)
+            {
+                this.maxNumFailures = maxNumFailures;
+            }
+
+            @Override
+            public AlwaysFailingTestJob newJob()
+            {
+                return new AlwaysFailingTestJob(maxNumFailures);
+            }
+        }
+
+        public final AtomicInteger executionCounter = new AtomicInteger(0);
+        public final Once<Boolean> failedCalledAfterExecute = new Once<Boolean>();
+
+        private final int maxNumFailures;
+
+        public AlwaysFailingTestJob(int maxNumFailures)
+        {
+            this.maxNumFailures = maxNumFailures;
+        }
+
+        @Override
+        public String execute(String s) throws ExecutionFailureException
+        {
+            final int i = executionCounter.incrementAndGet();
+            if (i <= maxNumFailures)
+            {
+                throw new ExecutionFailureException(s);
+            }
+            return s;
+        }
+
+        @Override
+        public void failed(String s, Throwable cause)
+        {
+            failedCalledAfterExecute.set(executionCounter.get() != 0);
+        }
+    }
+
+    public static class BasicJobImpl extends TestAbstractJob<String> implements BasicJob<String, String>
+    {
+        @Override
+        public void execute(MessageCtx<String> i,
+            JobExecutionContext<String, String, BasicJob<String, String>> executionContext)
+        {
+            executionContext.succeeded(this, i);
+            executionContext.submitResponse("Hello! " + i.get());
+            executionContext.end(this);
+        }
     }
 
     @Before

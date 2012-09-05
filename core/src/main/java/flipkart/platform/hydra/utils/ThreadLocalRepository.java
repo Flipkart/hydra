@@ -1,6 +1,9 @@
 package flipkart.platform.hydra.utils;
 
-import com.google.common.base.FinalizableReferenceQueue;
+import java.lang.ref.Reference;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import com.google.common.collect.Sets;
 
 import static flipkart.platform.hydra.traits.Initializable.LifeCycle.destroy;
 import static flipkart.platform.hydra.traits.Initializable.LifeCycle.initialize;
@@ -18,7 +21,7 @@ import static flipkart.platform.hydra.traits.Initializable.LifeCycle.initialize;
  */
 public class ThreadLocalRepository<T>
 {
-    private static final FinalizableReferenceQueue queue = new FinalizableReferenceQueue();
+    private final Set<Reference> finalizableSet = Sets.newSetFromMap(new ConcurrentHashMap<Reference, Boolean>());
 
     private final ObjectFactory<? extends T> factory;
     private final ThreadLocal<ThreadLocalWeakReference<T>> threadLocal;
@@ -44,7 +47,7 @@ public class ThreadLocalRepository<T>
                     try
                     {
                         initialize(j);
-                        return new ThreadLocalWeakReference<T>(j);
+                        return new ThreadLocalWeakReference<T>(j, finalizableSet);
                     }
                     catch (Exception e)
                     {
@@ -76,6 +79,17 @@ public class ThreadLocalRepository<T>
     public void close()
     {
         destroy(factory);
+        finalizeAll();
+    }
+
+    private void finalizeAll()
+    {
+        // we need a copy here to avoid concurrent modification exception
+        final Reference[] references = finalizableSet.toArray(new Reference[finalizableSet.size()]);
+        for (Reference reference : references)
+        {
+            reference.enqueue();
+        }
     }
 
 }
