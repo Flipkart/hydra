@@ -8,7 +8,7 @@ package flipkart.platform.hydra.traits;
  * @author shashwat
  * 
  */
-public interface Initializable extends CanDestroy
+public interface Initializable extends Destroyable
 {
     /**
      * Initialization

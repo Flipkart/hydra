@@ -1,8 +1,7 @@
 package flipkart.platform.hydra.node;
 
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.MoreExecutors;
 import flipkart.platform.hydra.job.JobFactory;
@@ -274,13 +273,13 @@ public class WorkStationTest extends TestBase
         assertFalse("Thread that begins with \'" + namePrefix + "\' should have been stopped", foundThread);
     }
 
-    private void printWordFrequencyMap()
-    {
-        for (Map.Entry<String, Integer> entry : mergeNode.mergeFrequencyMap.entrySet())
-        {
-            System.out.println(entry.getKey() + "->" + entry.getValue());
-        }
-    }
+    //private void printWordFrequencyMap()
+    //{
+    //    for (Map.Entry<String, Integer> entry : mergeNode.mergeFrequencyMap.entrySet())
+    //    {
+    //        System.out.println(entry.getKey() + "->" + entry.getValue());
+    //    }
+    //}
 
     private static class VowelSelector implements Selector<String>
     {
@@ -444,11 +443,58 @@ public class WorkStationTest extends TestBase
         basic.shutdown(true);
     }
 
-    // TODO: test queue lifecycles are properly set, create a mock HQueue
+    private static class AlwaysThrowRejectedExecutionExceptionExecutor extends AbstractExecutorService
+    {
+        private final RunState runState = new RunState();
 
-    // TODO: Test executeWorker() (such as RejectionException is thrown on queue full) call failures are handled
-    // properly
+        @Override
+        public void shutdown()
+        {
+            runState.shutdown();
+        }
 
-    // TODO: Test ManyToManyJob -> batch size never violated
-    // TODO: Test ManyToManyJob -> executeWorker() call failures are handled properly
+        @Override
+        public List<Runnable> shutdownNow()
+        {
+            runState.shutdown();
+            return null;
+        }
+
+        @Override
+        public boolean isShutdown()
+        {
+            return !runState.isActive();
+        }
+
+        @Override
+        public boolean isTerminated()
+        {
+            return runState.isShutdown();
+        }
+
+        @Override
+        public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException
+        {
+            return isShutdown();
+        }
+
+        @Override
+        public void execute(Runnable command)
+        {
+            throw new RejectedExecutionException("I do not accept commands!");
+        }
+    }
+
+    @Test
+    public void testExecutorThrowsRejectedExecutionException() throws Exception
+    {
+        final ConcurrentQueue<String> queue = ConcurrentQueue.newQueue();
+        final Node<String, String> node = WSBuilder.withO2OJob(WordSanitizer.class).withQueue(queue)
+            .withExecutor(new AlwaysThrowRejectedExecutionExceptionExecutor()).build();
+
+        assertTrue("Queue is initially empty", queue.isEmpty());
+        node.accept("World!");
+        assertTrue("Queue should be finally empty", queue.isEmpty());
+        node.shutdown(true);
+    }
 }
