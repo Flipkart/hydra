@@ -54,5 +54,9 @@ public abstract class AbstractJobExecutionContext<I, O, J extends Job<I>> implem
         return j;
     }
 
+    /**
+     * Schedule a new job to process the messages which were retried.
+     * Called after the message is added backed to the queue
+     */
     protected abstract void scheduleRetryJob();
 }
