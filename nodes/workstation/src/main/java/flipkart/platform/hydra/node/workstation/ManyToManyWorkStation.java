@@ -90,7 +90,7 @@ public class ManyToManyWorkStation<I, O> extends WorkStationBase<I, O, ManyToMan
                         break;
                     try
                     {
-                        executeWorker(new ManyToManyWorker(newJobExecutionContext(), queue.read(jobsCommitted)));
+                        executeWorker(new ManyToManyWorker(jobExecutionContextFactory, queue.read(jobsCommitted)));
                     }
                     catch (Exception e)
                     {
@@ -109,20 +109,23 @@ public class ManyToManyWorkStation<I, O> extends WorkStationBase<I, O, ManyToMan
 
     private static class ManyToManyWorker<I, O> implements Runnable
     {
-        private final JobExecutionContext<I, O, ManyToManyJob<I, O>> jobExecutionContext;
+        private final JobExecutionContextFactory<I, O, ManyToManyJob<I, O>> jobExecutionContextFactory;
         private final MessageCtxBatch<I> messageCtxBatch;
 
-        private ManyToManyWorker(JobExecutionContext<I, O, ManyToManyJob<I, O>> jobExecutionContext,
+        private ManyToManyWorker(
+            JobExecutionContextFactory<I, O, ManyToManyJob<I, O>> jobExecutionContextFactory,
             MessageCtxBatch<I> messageCtxBatch)
         {
-            this.jobExecutionContext = jobExecutionContext;
+            this.jobExecutionContextFactory = jobExecutionContextFactory;
             this.messageCtxBatch = messageCtxBatch;
         }
 
         @Override
         public void run()
         {
-            final ManyToManyJob<I, O> job = jobExecutionContext.begin();
+            final JobExecutionContext<I, O, ManyToManyJob<I, O>> jobExecutionContext =
+                jobExecutionContextFactory.newJobExecutionContext();
+            final ManyToManyJob<I, O> job = jobExecutionContext.getJob();
             if (job != null && !messageCtxBatch.isEmpty())
             {
                 final List<I> jobList = new ArrayList<I>(messageCtxBatch.size());
@@ -141,7 +144,7 @@ public class ManyToManyWorkStation<I, O> extends WorkStationBase<I, O, ManyToMan
 
                     for (MessageCtx<I> messageCtx : messageCtxBatch)
                     {
-                        jobExecutionContext.succeeded(job, messageCtx);
+                        jobExecutionContext.succeeded(messageCtx);
                     }
 
                     messageCtxBatch.commit();
@@ -150,12 +153,12 @@ public class ManyToManyWorkStation<I, O> extends WorkStationBase<I, O, ManyToMan
                 {
                     for (MessageCtx<I> messageCtx : messageCtxBatch)
                     {
-                        jobExecutionContext.failed(job, messageCtx, ex);
+                        jobExecutionContext.failed(messageCtx, ex);
                     }
                 }
                 finally
                 {
-                    jobExecutionContext.end(job);
+                    jobExecutionContext.end();
                 }
             }
         }

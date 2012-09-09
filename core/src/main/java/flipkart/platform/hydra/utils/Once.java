@@ -1,6 +1,7 @@
 package flipkart.platform.hydra.utils;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * User: shashwat
@@ -15,34 +16,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class Once<I>
 {
     private final AtomicBoolean isSet = new AtomicBoolean(false);
-    private volatile I i = null;
-    private final I defValue;
+    private final AtomicReference<I> i;
 
     public Once()
     {
-        this.defValue = null;
+        i = new AtomicReference<I>();
     }
 
-    public Once(I defValue)
+    public Once(I initialValue)
     {
-        this.defValue = defValue;
-    }
-
-    public Once(I initial, I defValue)
-    {
-        this.i = initial;
-        this.defValue = defValue;
-    }
-
-    /**
-     * Set the value of the variable to the configured default value as set in {@link #Once(Object)}
-     *
-     * @return <code>true</code> only if the value is set, <code>false</code> otherwise
-     * @see #Once(Object)
-     */
-    public boolean set()
-    {
-        return set(defValue);
+        this.i = new AtomicReference<I>(initialValue);
     }
 
     /**
@@ -56,7 +39,7 @@ public class Once<I>
     {
         if (isSet.compareAndSet(false, true))
         {
-            i = value;
+            i.set(value);
             return true;
         }
 
@@ -64,12 +47,12 @@ public class Once<I>
     }
 
     /**
-     * @return the value that was set or <code>null</code> otherwise. Note that <code>null</code> is also set if the
-     *         default constructor was used and {@link #set()} was used.
+     * @return the value that was set or initial value if provided {@link #} ot <code>null</code> otherwise.
+     * Note that <code>null</code> is also set if the default constructor was used and {@link #set(Object)} was used.
      */
     public I get()
     {
-        return i;
+        return i.get();
     }
 
     public boolean isSet()

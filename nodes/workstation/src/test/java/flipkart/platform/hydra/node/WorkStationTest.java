@@ -450,13 +450,13 @@ public class WorkStationTest extends TestBase
         @Override
         public void shutdown()
         {
-            runState.shutdown();
+            runState.shutdownNow();
         }
 
         @Override
         public List<Runnable> shutdownNow()
         {
-            runState.shutdown();
+            runState.shutdownNow();
             return null;
         }
 

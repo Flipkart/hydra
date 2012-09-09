@@ -4,7 +4,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Condition;
 import com.google.common.collect.Maps;
 import flipkart.platform.hydra.common.JobExecutionContext;
 import flipkart.platform.hydra.common.MessageCtx;
@@ -302,9 +301,9 @@ public class TestBase
         public void execute(MessageCtx<String> i,
             JobExecutionContext<String, String, BasicJob<String, String>> executionContext)
         {
-            executionContext.succeeded(this, i);
+            executionContext.succeeded(i);
             executionContext.submitResponse("Hello! " + i.get());
-            executionContext.end(this);
+            executionContext.end();
         }
     }
 

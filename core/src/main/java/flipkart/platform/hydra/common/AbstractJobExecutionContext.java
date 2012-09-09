@@ -14,15 +14,17 @@ public abstract class AbstractJobExecutionContext<I, O, J extends Job<I>> implem
 {
     private final RetryPolicy<I> retryPolicy;
     protected final NodeMetrics metrics;
+    protected final J j;
 
-    protected AbstractJobExecutionContext(String identity, RetryPolicy<I> retryPolicy)
+    protected AbstractJobExecutionContext(J j, String identity, RetryPolicy<I> retryPolicy)
     {
+        this.j = j;
         this.retryPolicy = retryPolicy;
         this.metrics = new NodeMetrics(identity);
     }
 
     @Override
-    public void succeeded(J j, MessageCtx<I> messageCtx)
+    public void succeeded(MessageCtx<I> messageCtx)
     {
         messageCtx.ack();
         metrics.reportMessageProcessingTime(messageCtx.getCreatedTimestamp());
@@ -30,7 +32,7 @@ public abstract class AbstractJobExecutionContext<I, O, J extends Job<I>> implem
     }
 
     @Override
-    public void failed(J j, MessageCtx<I> messageCtx, Throwable t)
+    public void failed(MessageCtx<I> messageCtx, Throwable t)
     {
         if (!retryPolicy.retry(messageCtx))
         {
@@ -44,6 +46,12 @@ public abstract class AbstractJobExecutionContext<I, O, J extends Job<I>> implem
             scheduleRetryJob();
         }
         metrics.reportMessageProcessed(NodeMetrics.Result.FAILED);
+    }
+
+    @Override
+    public J getJob()
+    {
+        return j;
     }
 
     protected abstract void scheduleRetryJob();

@@ -43,7 +43,7 @@ public class HttpNode<I, O> extends WorkStationBase<I, O, HttpJob<I, O>>
     @Override
     protected void scheduleJob()
     {
-        executeWorker(new HttpWorker(newJobExecutionContext(), queue.read(), client));
+        executeWorker(new HttpWorker(jobExecutionContextFactory, queue.read(), client));
     }
 
     @Override
@@ -54,14 +54,15 @@ public class HttpNode<I, O> extends WorkStationBase<I, O, HttpJob<I, O>>
 
     private static class HttpWorker<I, O> implements Runnable
     {
-        private final JobExecutionContext<I, O, HttpJob<I, O>> jobExecutionContext;
+        private final JobExecutionContextFactory<I, O, HttpJob<I, O>> jobExecutionContextFactory;
         private final MessageCtx<I> messageCtx;
         private final AsyncHttpClient client;
 
-        public HttpWorker(JobExecutionContext<I, O, HttpJob<I, O>> jobExecutionContext, MessageCtx<I> messageCtx,
+        public HttpWorker(JobExecutionContextFactory<I, O, HttpJob<I, O>> jobExecutionContextFactory,
+            MessageCtx<I> messageCtx,
             AsyncHttpClient client)
         {
-            this.jobExecutionContext = jobExecutionContext;
+            this.jobExecutionContextFactory = jobExecutionContextFactory;
             this.messageCtx = messageCtx;
             this.client = client;
         }
@@ -70,7 +71,9 @@ public class HttpNode<I, O> extends WorkStationBase<I, O, HttpJob<I, O>>
         public void run()
         {
             final I i = messageCtx.get();
-            final HttpJob<I, O> job = jobExecutionContext.begin();
+            final JobExecutionContext<I, O, HttpJob<I, O>> jobExecutionContext =
+                jobExecutionContextFactory.newJobExecutionContext();
+            final HttpJob<I, O> job = jobExecutionContext.getJob();
 
             try
             {
@@ -82,28 +85,28 @@ public class HttpNode<I, O> extends WorkStationBase<I, O, HttpJob<I, O>>
                     {
                         final O o = job.buildResponse(i, response);
                         jobExecutionContext.submitResponse(o);
-                        jobExecutionContext.succeeded(job, messageCtx);
-                        jobExecutionContext.end(job);
+                        jobExecutionContext.succeeded(messageCtx);
+                        jobExecutionContext.end();
                         return o;
                     }
 
                     @Override
                     public void onThrowable(Throwable t)
                     {
-                        failedJob(job, t);
+                        failedJob(jobExecutionContext, t);
                     }
                 });
             }
             catch (Exception e)
             {
-                failedJob(job, e);
+                failedJob(jobExecutionContext, e);
             }
         }
 
-        private void failedJob(HttpJob<I, O> job, Throwable t)
+        private void failedJob(JobExecutionContext jobExecutionContext, Throwable t)
         {
-            jobExecutionContext.failed(job, messageCtx, t);
-            jobExecutionContext.end(job);
+            jobExecutionContext.failed(messageCtx, t);
+            jobExecutionContext.end();
         }
     }
 }

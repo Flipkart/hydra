@@ -25,6 +25,12 @@ public class RunState
         return state.compareAndSet(State.SHUTTING_DOWN, State.SHUTDOWN);
     }
 
+    public boolean shutdownNow()
+    {
+        state.set(State.SHUTDOWN);
+        return true;
+    }
+
     public boolean isActive()
     {
         return state.get() == State.ACTIVE;

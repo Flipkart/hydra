@@ -26,18 +26,19 @@ public class OneToManyWorkStation<I, O> extends WorkStationBase<I, O, OneToManyJ
     @Override
     protected void scheduleJob()
     {
-        executeWorker(new OneToManyWorker(newJobExecutionContext(), queue.read()));
+        executeWorker(new OneToManyWorker(jobExecutionContextFactory, queue.read()));
     }
 
     private static class OneToManyWorker<I, O> implements Runnable
     {
-        private final JobExecutionContext<I, O, OneToManyJob<I, O>> jobExecutionContext;
+        private final JobExecutionContextFactory<I, O, OneToManyJob<I, O>> jobExecutionContextFactory;
         private final MessageCtx<I> messageCtx;
 
-        public OneToManyWorker(JobExecutionContext<I, O, OneToManyJob<I, O>> jobExecutionContext,
+        public OneToManyWorker(
+            JobExecutionContextFactory jobExecutionContextFactory,
             MessageCtx<I> messageCtx)
         {
-            this.jobExecutionContext = jobExecutionContext;
+            this.jobExecutionContextFactory = jobExecutionContextFactory;
             this.messageCtx = messageCtx;
         }
 
@@ -46,7 +47,9 @@ public class OneToManyWorkStation<I, O> extends WorkStationBase<I, O, OneToManyJ
         {
             final I i = messageCtx.get();
 
-            final OneToManyJob<I, O> job = jobExecutionContext.begin();
+            final JobExecutionContext<I, O, OneToManyJob<I, O>> jobExecutionContext =
+                jobExecutionContextFactory.newJobExecutionContext();
+            final OneToManyJob<I, O> job = jobExecutionContext.getJob();
             if (job != null)
             {
                 try
@@ -56,15 +59,15 @@ public class OneToManyWorkStation<I, O> extends WorkStationBase<I, O, OneToManyJ
                     {
                         jobExecutionContext.submitResponse(o);
                     }
-                    jobExecutionContext.succeeded(job, messageCtx);
+                    jobExecutionContext.succeeded(messageCtx);
                 }
                 catch (Exception ex)
                 {
-                    jobExecutionContext.failed(job, messageCtx, ex);
+                    jobExecutionContext.failed(messageCtx, ex);
                 }
                 finally
                 {
-                    jobExecutionContext.end(job);
+                    jobExecutionContext.end();
                 }
             }
         }

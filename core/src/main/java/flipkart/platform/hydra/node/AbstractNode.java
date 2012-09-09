@@ -27,6 +27,8 @@ public abstract class AbstractNode<I, O, J extends Job<I>> extends AbstractNodeB
     private final ThreadLocalRepository<J> threadLocalJobRepository;
     private final RefCounter activeWorkers = new RefCounter(0);
 
+    protected final JobExecutionContextFactory jobExecutionContextFactory;
+
     protected AbstractNode(String name, HQueue<I> queue, RetryPolicy<I> retryPolicy,
         JobFactory<? extends J> jobFactory)
     {
@@ -35,6 +37,7 @@ public abstract class AbstractNode<I, O, J extends Job<I>> extends AbstractNodeB
         this.retryPolicy = retryPolicy;
 
         this.threadLocalJobRepository = ThreadLocalRepository.from(JobObjectFactory.from(jobFactory));
+        this.jobExecutionContextFactory = new JobExecutionContextFactory(this);
     }
 
     public boolean isDone()
@@ -56,38 +59,50 @@ public abstract class AbstractNode<I, O, J extends Job<I>> extends AbstractNodeB
 
     protected abstract void scheduleJob();
 
-    protected JobExecutionContext<I, O, J> newJobExecutionContext()
+    public static class JobExecutionContextFactory<I, O, J extends Job<I>> implements
+        JobExecutionContext.Factory<I, O, J>
     {
-        return new NodeJobExecutionContext(retryPolicy);
+        private final AbstractNode<I, O, J> abstractNode;
+
+        public JobExecutionContextFactory(AbstractNode<I, O, J> abstractNode)
+        {
+            this.abstractNode = abstractNode;
+        }
+
+        public JobExecutionContext<I, O, J> newJobExecutionContext()
+        {
+            final J j = abstractNode.threadLocalJobRepository.get();
+            if (j != null)
+            {
+                return new NodeJobExecutionContext(j, abstractNode);
+            }
+            return null;
+        }
     }
 
-    protected class NodeJobExecutionContext extends AbstractJobExecutionContext<I, O, J>
+    protected static class NodeJobExecutionContext<I, O, J extends Job<I>> extends AbstractJobExecutionContext<I, O, J>
     {
-        public NodeJobExecutionContext(RetryPolicy<I> retryPolicy)
+        private final AbstractNode<I, O, J> abstractNode;
+
+        public NodeJobExecutionContext(J j, AbstractNode<I, O, J> abstractNode)
         {
-            super(getIdentity(), retryPolicy);
+            super(j, abstractNode.getIdentity(), abstractNode.retryPolicy);
+            this.abstractNode = abstractNode;
+
+            begin();
+        }
+
+        private void begin()
+        {
+            abstractNode.activeWorkers.offer();
+            metrics.reportJobStart();
         }
 
         @Override
-        public J begin()
+        public void end()
         {
-            final J j = threadLocalJobRepository.get();
-            if (j != null)
-            {
-                activeWorkers.offer();
-                metrics.reportJobStart();
-            }
-            return j;
-        }
-
-        @Override
-        public void end(J j)
-        {
-            if (j != null)
-            {
-                metrics.reportJobEnd();
-                activeWorkers.take();
-            }
+            metrics.reportJobEnd();
+            abstractNode.activeWorkers.take();
         }
 
         @Override
@@ -95,14 +110,14 @@ public abstract class AbstractNode<I, O, J extends Job<I>> extends AbstractNodeB
         {
             if (o != null)
             {
-                AbstractNode.this.sendForward(o);
+                abstractNode.sendForward(o);
             }
         }
 
         @Override
         protected void scheduleRetryJob()
         {
-            scheduleJob();
+            abstractNode.scheduleJob();
         }
     }
 }
