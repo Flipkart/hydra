@@ -5,15 +5,14 @@ import flipkart.platform.hydra.node.Node;
 import flipkart.platform.hydra.utils.UnModifiableMap;
 
 /**
- * Selector interface to choose one or more nodes
+ * Selector interface to choose one or more nodes to send a message to
  *
  * @author shashwat
  */
 public interface Selector<T>
 {
     /**
-     * Select one or more nodes to onNewMessage the message to.
-     *
+     * Select one or more nodes to send the message to.
      *
      * @param i
      *     Job description to be forwarded

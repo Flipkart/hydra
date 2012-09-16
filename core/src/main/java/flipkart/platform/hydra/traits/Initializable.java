@@ -11,7 +11,7 @@ package flipkart.platform.hydra.traits;
 public interface Initializable extends Destroyable
 {
     /**
-     * Initialization
+     * Initialization. Must be called only once
      */
     public void init();
 

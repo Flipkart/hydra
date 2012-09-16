@@ -123,7 +123,7 @@ public class TestBase
         }
     }
 
-    public static class MergeWordFrequencies extends AbstractNodeBase<Map<String, Integer>, Void>
+    public static class MergeWordFrequencies extends BaseNode<Map<String, Integer>, Void>
     {
         public final ConcurrentMap<String, Integer> mergeFrequencyMap;
 

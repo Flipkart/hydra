@@ -10,16 +10,28 @@ import flipkart.platform.hydra.utils.RefCounter;
 import flipkart.platform.hydra.utils.ThreadLocalRepository;
 
 /**
- * An abstract {@link flipkart.platform.hydra.node.Node} implementation which executes job eventually using a
- * {@link java.util.concurrent.ThreadPoolExecutor}.
+ * An abstract {@link flipkart.platform.hydra.node.Node} that extends {@link BaseNode} and provides framework
+ * to process messages in either sync or async manner.
+ * <p/>
+ * Provides configuration in terms of:
+ * <ul>
+ * <li>{@link Job} that will process the message</li>
+ * <li>{@link HQueue} that will store the messages</li>
+ * <li>{@link RetryPolicy} that will be used to retry on failure</li>
+ * </ul>
+ * <p/>
+ * In case of threaded, async execution, manages job and {@link JobFactory} life cycle if they are {@link
+ * flipkart.platform.hydra.traits.Initializable}
  *
  * @param <I>
  *     Input job description type
  * @param <O>
  *     Output job description type
+ * @param <J>
+ *     {@link Job} type that will process the messages
  * @author shashwat
  */
-public abstract class AbstractNode<I, O, J extends Job<I>> extends AbstractNodeBase<I, O>
+public abstract class AbstractNode<I, O, J extends Job<I>> extends BaseNode<I, O>
 {
     protected final HQueue<I> queue;
 
@@ -40,6 +52,9 @@ public abstract class AbstractNode<I, O, J extends Job<I>> extends AbstractNodeB
         this.jobExecutionContextFactory = new JobExecutionContextFactory(this);
     }
 
+    /**
+     * @return <code>true</code> only if message queue is empty and there are no active workers
+     */
     public boolean isDone()
     {
         return (super.isDone() && queue.isEmpty() && activeWorkers.isZero());
@@ -57,6 +72,10 @@ public abstract class AbstractNode<I, O, J extends Job<I>> extends AbstractNodeB
         threadLocalJobRepository.close();
     }
 
+    /**
+     * Required to be implemented by the derived class to schedule the execution of the job. scheduleJob is called
+     * whenever a new message is added to the message queue.
+     */
     protected abstract void scheduleJob();
 
     public static class JobExecutionContextFactory<I, O, J extends Job<I>> implements

@@ -8,11 +8,11 @@ import flipkart.platform.hydra.node.Node;
  */
 public interface LinkEventListener
 {
-    public void onProducerNodeAdded(GenericLink link, Node node);
+    public void onProducerNodeAdded(Link link, Node node);
 
-    public void onProducerNodeRemoved(GenericLink link, Node node);
+    public void onProducerNodeRemoved(Link link, Node node);
 
-    public void onConsumerNodeAdded(GenericLink link, Node node);
+    public void onConsumerNodeAdded(Link link, Node node);
 
-    public void onConsumerNodeRemoved(GenericLink link, Node node);
+    public void onConsumerNodeRemoved(Link link, Node node);
 }

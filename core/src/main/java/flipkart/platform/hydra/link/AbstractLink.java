@@ -13,10 +13,13 @@ import flipkart.platform.hydra.utils.UnModifiableCollection;
 import flipkart.platform.hydra.utils.UnModifiableMap;
 
 /**
- * User: shashwat
- * Date: 07/08/12
+ * Abstract {@link Link} implementation.
+ *
+ * @see Selector
+ *      User: shashwat
+ *      Date: 07/08/12
  */
-public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
+public abstract class AbstractLink<T1, T2> implements Link<T1, T2>
 {
     protected final ConcurrentMap<String, Node<T2, ?>> consumerNodes = new ConcurrentHashMap<String, Node<T2, ?>>();
     protected final ConcurrentMap<String, Node<?, T1>> producerNodes = new ConcurrentHashMap<String, Node<?, T1>>();
@@ -26,11 +29,25 @@ public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
     private final Selector<T2> selector;
     private final LinkTopology topology;
 
+    /**
+     * Constructor to create a {@link Link} that will send every message produced by producers to each consumers.
+     *
+     * @param topology
+     *     Topology this links belongs to
+     */
     protected AbstractLink(LinkTopology topology)
     {
         this(topology, new DefaultSelector<T2>());
     }
 
+    /**
+     * Constructor to create a {@link Link} that will send every message produced by producers to selected number of
+     * consumers, selected using {@link Selector}.
+     *
+     * @param topology
+     *     Topology this links belongs to
+     * @param selector {@link Selector} that will be used to select {@link Node}s
+     */
     public AbstractLink(LinkTopology topology, Selector<T2> selector)
     {
         this.topology = topology;
@@ -127,6 +144,16 @@ public abstract class AbstractLink<T1, T2> implements GenericLink<T1, T2>
         return consumerNodes.isEmpty();
     }
 
+    /**
+     * Transform and {@link #send(Object)} the message received from the producers returned by {@link #getProducers()}
+     * to consumers returned by {@link #getConsumers()}.
+     *
+     * @param node
+     *     {@link Node} which produced the message
+     * @param t
+     *     Message produced
+     * @return <code>true</code> if the message was successfully send to at least one consumer
+     */
     protected abstract boolean forward(Node<?, ? extends T1> node, T1 t);
 
     private void removeConsumer(Node<?, ?> node)

@@ -9,7 +9,7 @@ import com.ning.http.client.Request;
 import com.ning.http.client.Response;
 import flipkart.platform.hydra.job.ExecutionFailureException;
 import flipkart.platform.hydra.jobs.HttpJob;
-import flipkart.platform.hydra.node.AbstractNodeBase;
+import flipkart.platform.hydra.node.BaseNode;
 import flipkart.platform.hydra.node.Node;
 import flipkart.platform.hydra.node.builder.HttpNodeBuilder;
 import flipkart.platform.hydra.topology.LinkTopology;
@@ -96,7 +96,7 @@ public class HttpNodeTest
         }
     }
 
-    public static class ResponseNode extends AbstractNodeBase<String, String>
+    public static class ResponseNode extends BaseNode<String, String>
     {
         public String s = null;
 

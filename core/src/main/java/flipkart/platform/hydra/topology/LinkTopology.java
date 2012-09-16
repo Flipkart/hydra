@@ -3,7 +3,7 @@ package flipkart.platform.hydra.topology;
 import java.util.*;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import flipkart.platform.hydra.link.GenericLink;
+import flipkart.platform.hydra.link.Link;
 import flipkart.platform.hydra.node.Node;
 import flipkart.platform.hydra.traits.CanShutdown;
 import flipkart.platform.hydra.utils.RunState;
@@ -15,10 +15,10 @@ import flipkart.platform.hydra.utils.UnModifiableCollection;
  */
 public class LinkTopology implements CanShutdown
 {
-    private final Set<GenericLink> linkSet = Sets.newSetFromMap(Maps.<GenericLink, Boolean>newConcurrentMap());
+    private final Set<Link> linkSet = Sets.newSetFromMap(Maps.<Link, Boolean>newConcurrentMap());
     private final RunState runState = new RunState();
 
-    public LinkTopology addLink(GenericLink link)
+    public LinkTopology addLink(Link link)
     {
         if (runState.isActive())
         {
@@ -60,13 +60,13 @@ public class LinkTopology implements CanShutdown
         }
     }
 
-    private static Collection<Node> topologicalSort(Collection<GenericLink> genericLinks)
+    private static Collection<Node> topologicalSort(Collection<Link> links)
     {
         final List<Node> sorted = new ArrayList(); // result
 
-        final Map<Node, Set<Node>> successors = prepareSuccessorMap(genericLinks);
+        final Map<Node, Set<Node>> successors = prepareSuccessorMap(links);
 
-        final Map<Node, Set<Node>> predecessorMap = preparePredecessorMap(genericLinks);
+        final Map<Node, Set<Node>> predecessorMap = preparePredecessorMap(links);
 
         final Set<Node> visited = new HashSet(); // auxiliary list
 
@@ -78,12 +78,12 @@ public class LinkTopology implements CanShutdown
         return sorted;
     }
 
-    private static Map<Node, Set<Node>> prepareSuccessorMap(Collection<GenericLink> links)
+    private static Map<Node, Set<Node>> prepareSuccessorMap(Collection<Link> links)
     {
         final HashMap<Node, Set<Node>> successorMap = new HashMap();
 
         // build successorMap map
-        for (GenericLink link : links)
+        for (Link link : links)
         {
             final UnModifiableCollection<Node> producers = link.getProducers();
             final UnModifiableCollection<Node> consumers = link.getConsumers();
@@ -128,12 +128,12 @@ public class LinkTopology implements CanShutdown
         return successorMap;
     }
 
-    private static Map<Node, Set<Node>> preparePredecessorMap(Collection<GenericLink> links)
+    private static Map<Node, Set<Node>> preparePredecessorMap(Collection<Link> links)
     {
         final HashMap<Node, Set<Node>> predecessorMap = new HashMap();
 
         // build successorMap map
-        for (GenericLink link : links)
+        for (Link link : links)
         {
             final UnModifiableCollection<Node> consumers = link.getConsumers();
             final UnModifiableCollection<Node> producers = link.getProducers();

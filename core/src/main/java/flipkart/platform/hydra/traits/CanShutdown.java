@@ -7,5 +7,6 @@ package flipkart.platform.hydra.traits;
 public interface CanShutdown
 {
     boolean isShutdown();
+
     boolean shutdown(boolean awaitTermination);
 }

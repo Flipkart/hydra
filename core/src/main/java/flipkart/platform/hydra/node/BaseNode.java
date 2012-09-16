@@ -5,7 +5,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import flipkart.platform.hydra.utils.RunState;
 
 /**
- * An base {@link Node} implementation
+ * A {@link Node} base abstraction that takes care of node's name and event management. It is recommended to extend
+ * this base class when implementing new {@link Node} type
  *
  * @param <I>
  *     Input job description type
@@ -13,14 +14,14 @@ import flipkart.platform.hydra.utils.RunState;
  *     Output job description type
  * @author shashwat
  */
-public abstract class AbstractNodeBase<I, O> implements Node<I, O>
+public abstract class BaseNode<I, O> implements Node<I, O>
 {
     private final String name;
     protected final RunState runState = new RunState();
 
     protected final Queue<NodeEventListener<O>> eventListeners = new ConcurrentLinkedQueue<NodeEventListener<O>>();
 
-    protected AbstractNodeBase(String name)
+    protected BaseNode(String name)
     {
         this.name = name;
     }
@@ -85,26 +86,41 @@ public abstract class AbstractNodeBase<I, O> implements Node<I, O>
     }
 
     /**
-     * Determine if all messages are consumed
-     * @return <code>true</code>
+     * @return <code>true</code> if all messages are consumed and it is safe to call {@link #shutdown(boolean)}
      */
     public boolean isDone()
     {
         return (!runState.isActive());
     }
 
-    // Can override completely
-    protected abstract void shutdownResources(boolean awaitTermination) throws InterruptedException;
-
+    /**
+     * helper method to notify listeners of the availability of new output message
+     * @param o the output message that needs to be sent
+     */
     protected void sendForward(O o)
     {
         for (NodeEventListener<O> eventListener : eventListeners)
         {
-            eventListener.onNewMessage(AbstractNodeBase.this, o);
+            eventListener.onNewMessage(BaseNode.this, o);
         }
     }
 
+    /**
+     * To be implemented by the derived classes to shutdown/destroy the resources.
+     *
+     * @param awaitTermination
+     *     Boolean, if <code>true</code> wait for complete termination of all the resources.
+     * @throws InterruptedException
+     *     if Interrupted exception was thrown when waiting for termination
+     */
+    protected abstract void shutdownResources(boolean awaitTermination) throws InterruptedException;
 
+    /**
+     * To be implemented by the derived classes to accept the message
+     *
+     * @param i Message that needs to be processed by this node
+     * @see Node#accept(Object) 
+     */
     protected abstract void acceptMessage(I i);
 
 }

@@ -3,6 +3,7 @@ package flipkart.platform.hydra.job;
 import flipkart.platform.hydra.utils.ObjectFactory;
 
 /**
+ * An adapter that converts {@link JobFactory} instance into {@link ObjectFactory} instance
  * User: shashwat
  * Date: 02/08/12
  */

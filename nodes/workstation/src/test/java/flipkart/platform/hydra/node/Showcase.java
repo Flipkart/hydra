@@ -106,7 +106,7 @@ public class Showcase
                 WSBuilder.withO2OJob(Job1.class).withMaxAttempts(1).build();
 
             final Node<Integer, Integer> wsM =
-                WSBuilder.withM2MJob(MultiJob.class).withBatch(3, 3).withThreadExecutor(2).withMaxAttempts(2).build();
+                WSBuilder.withM2MJob(MultiJob.class).withBatch(10, 10).withThreadExecutor(2).withMaxAttempts(2).build();
 
             final Node<Integer, String> ws2 =
                 WSBuilder.withO2OJob(Job2.class).withMaxAttempts(2).build();

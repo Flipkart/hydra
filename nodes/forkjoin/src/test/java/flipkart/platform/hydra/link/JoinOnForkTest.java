@@ -133,6 +133,12 @@ public class JoinOnForkTest extends JoinTestBase
         for (int i = 0; i < sequences.length; ++i)
         {
             final ForkJoinResult<PersonTask, Boolean> result = queue.poll();
+            if(result.predicateResult)
+            {
+                final PersonTask personTask = result.finishedForks.keySet().iterator().next();
+                System.out.println("Person: " +  personTask.getGroupId() + " can take leave");
+            }
+
             assertNotNull("result cannot be null", result);
 
             if (i == 1)

@@ -1,14 +1,13 @@
 package flipkart.platform.hydra.link;
 
 import java.util.Queue;
-import flipkart.platform.hydra.node.AbstractNodeBase;
-import flipkart.platform.hydra.queue.HQueue;
+import flipkart.platform.hydra.node.BaseNode;
 
 /**
 * User: shashwat
 * Date: 11/08/12
 */
-public class ResultNode<O> extends AbstractNodeBase<O, Void>
+public class ResultNode<O> extends BaseNode<O, Void>
 {
     private final Queue<O> queue;
 

@@ -9,7 +9,7 @@ import flipkart.platform.hydra.node.workstation.ManyToManyWorkStation;
  * User: shashwat
  * Date: 03/08/12
  */
-public class M2MNodeBuilder<I, O> extends AbstractWorkStationBuilder<I, O>
+public class M2MNodeBuilder<I, O> extends WorkStationBuilder<I, O>
 {
     private final JobFactory<? extends ManyToManyJob<I, O>> jobFactory;
     private int maxJobsToGroup = 10;

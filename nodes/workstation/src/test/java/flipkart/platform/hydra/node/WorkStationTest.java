@@ -6,7 +6,7 @@ import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.MoreExecutors;
 import flipkart.platform.hydra.job.JobFactory;
 import flipkart.platform.hydra.link.DefaultLink;
-import flipkart.platform.hydra.link.GenericLink;
+import flipkart.platform.hydra.link.Link;
 import flipkart.platform.hydra.link.Selector;
 import flipkart.platform.hydra.node.builder.WSBuilder;
 import flipkart.platform.hydra.node.workstation.BasicWorkStation;
@@ -47,7 +47,7 @@ public class WorkStationTest extends TestBase
     {
         super.setUp();
 
-        splitLineNode = WSBuilder.withO2MJob(SentenceToLines.class).build();
+        splitLineNode = WSBuilder.withO2MJob(SentenceToLines.class).withThreadExecutor(2).build();
         splitWordNode = WSBuilder.withO2MJob(LinesToWords.class).build();
         freqNode = WSBuilder.withM2MJob(CalculateWordFrequency.class).withBatch(5, 5).build();
         wordSanitizer = WSBuilder.withO2OJob(WordSanitizer.class).build();
@@ -117,7 +117,7 @@ public class WorkStationTest extends TestBase
         }
 
         int count = 0;
-        for (GenericLink link : Arrays.asList(link1, link2, link3))
+        for (Link link : Arrays.asList(link1, link2, link3))
         {
             final int i = ++count;
             assertTrue("Link" + i + " must not have any producers", link.getProducers().isEmpty());
@@ -166,8 +166,8 @@ public class WorkStationTest extends TestBase
     @Test
     public void testCircularDependency() throws Exception
     {
-        final HydraThreadFactory pingThreadFactory = new HydraThreadFactory("Ping");
-        final HydraThreadFactory pongThreadFactory = new HydraThreadFactory("Pong");
+        final DefaultThreadFactory pingThreadFactory = new DefaultThreadFactory("Ping");
+        final DefaultThreadFactory pongThreadFactory = new DefaultThreadFactory("Pong");
 
         final Node<String, String> pingNode =
             WSBuilder.withO2OJob(Ping.class).withExecutor(Executors.newFixedThreadPool(1, pingThreadFactory)).build();
@@ -206,8 +206,8 @@ public class WorkStationTest extends TestBase
     @Test
     public void testShutdownNoWaitForTermination() throws Exception
     {
-        final HydraThreadFactory pingThreadFactory = new HydraThreadFactory("Ping");
-        final HydraThreadFactory pongThreadFactory = new HydraThreadFactory("Pong");
+        final DefaultThreadFactory pingThreadFactory = new DefaultThreadFactory("Ping");
+        final DefaultThreadFactory pongThreadFactory = new DefaultThreadFactory("Pong");
 
         final Node<String, String> pingNode =
             WSBuilder.withO2OJob(Ping.class).withExecutor(Executors.newFixedThreadPool(1, pingThreadFactory)).build();
@@ -348,6 +348,7 @@ public class WorkStationTest extends TestBase
 
         for (InitializableJob job : jobList)
         {
+            assertNotNull("job instance cannot be null", job);
             assertEquals("Init counter should be 1.", 1, job.initCounter.get());
             assertEquals("Destroy counter should be 1", 1, job.destroyCounter.get());
             assertTrue("init() must be called before destroy()",
@@ -489,8 +490,8 @@ public class WorkStationTest extends TestBase
     public void testExecutorThrowsRejectedExecutionException() throws Exception
     {
         final ConcurrentQueue<String> queue = ConcurrentQueue.newQueue();
-        final Node<String, String> node = WSBuilder.withO2OJob(WordSanitizer.class).withQueue(queue)
-            .withExecutor(new AlwaysThrowRejectedExecutionExceptionExecutor()).build();
+        final Node<String, String> node = WSBuilder.withO2OJob(WordSanitizer.class).withExecutor(
+            new AlwaysThrowRejectedExecutionExceptionExecutor()).withQueue(queue).build();
 
         assertTrue("Queue is initially empty", queue.isEmpty());
         node.accept("World!");

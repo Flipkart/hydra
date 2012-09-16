@@ -12,7 +12,7 @@ import flipkart.platform.hydra.utils.DefaultJobFactory;
  * User: shashwat
  * Date: 05/08/12
  */
-public class HttpNodeBuilder<I, O> extends AbstractWorkStationBuilder<I, O>
+public class HttpNodeBuilder<I, O> extends WorkStationBuilder<I, O>
 {
     private long connectionTimeoutInMs = TimeUnit.SECONDS.toMillis(5);
     private long requestTimeoutInMs = TimeUnit.SECONDS.toMillis(5);

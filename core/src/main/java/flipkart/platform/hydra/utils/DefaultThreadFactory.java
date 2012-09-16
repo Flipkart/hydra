@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 * User: shashwat
 * Date: 03/08/12
 */
-public class HydraThreadFactory implements ThreadFactory
+public class DefaultThreadFactory implements ThreadFactory
 {
     private static class HydraThreadGroup extends ThreadGroup
     {
@@ -26,7 +26,7 @@ public class HydraThreadFactory implements ThreadFactory
 
     private final HydraThreadGroup threadGroup;
 
-    public HydraThreadFactory(String name)
+    public DefaultThreadFactory(String name)
     {
         this.threadGroup = new HydraThreadGroup(name);
     }
