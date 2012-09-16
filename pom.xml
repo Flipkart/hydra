@@ -1,12 +1,24 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>flipkart.platform</groupId>
-    <artifactId>workflow</artifactId>
-    <version>2.0.4</version>
-    <name>Workflow Framework</name>
-    <packaging>jar</packaging>
+    <artifactId>hydra</artifactId>
+    <version>0.1</version>
+    <name>hydra</name>
+    <description>Hydra - A configurable workflow framework</description>
+    <packaging>pom</packaging>
 
-   <build>
+    <modules>
+        <module>core</module>
+        <module>nodes</module>
+        <module>queues</module>
+    </modules>
+    
+    <properties>
+        <aspectj.version>1.6.11</aspectj.version>
+    </properties>
+
+    <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -53,6 +65,23 @@
                     <execution>
                         <goals>
                             <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Aspect J -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>aspectj-maven-plugin</artifactId>
+                <version>1.4</version>
+                <configuration>
+                    <complianceLevel>1.6</complianceLevel>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>compile</goal>
                         </goals>
                     </execution>
                 </executions>
