@@ -301,12 +301,13 @@ public class WorkStationTest extends TestBase
 
     private static class TestJobFactoryWrapper<J> implements JobFactory<J>
     {
-        private final List<J> list = Lists.newLinkedList();
+        private final List<J> list;
         private final JobFactory<J> jobFactory;
 
-        public TestJobFactoryWrapper(JobFactory<J> jobFactory)
+        public TestJobFactoryWrapper(JobFactory<J> jobFactory, List<J> list)
         {
             this.jobFactory = jobFactory;
+            this.list = list;
         }
 
         @Override
@@ -316,11 +317,6 @@ public class WorkStationTest extends TestBase
             list.add(j);
             return j;
         }
-
-        public UnModifiableCollection<J> getJobList()
-        {
-            return UnModifiableCollection.from(list);
-        }
     }
 
     @Test
@@ -328,9 +324,10 @@ public class WorkStationTest extends TestBase
     {
         final int numThreads = 2;
         final CountDownLatch latch = new CountDownLatch(numThreads);
+        final List<InitializableJob> jobList = Lists.newLinkedList();
 
         final TestJobFactoryWrapper<InitializableJob> testJobFactory =
-            new TestJobFactoryWrapper(new InitializableJob.Factory(latch));
+            new TestJobFactoryWrapper(new InitializableJob.Factory(latch), jobList);
 
         final Node<String, String> node = WSBuilder.withO2OJobFactory("InitializableJob", testJobFactory)
             .withThreadExecutor(numThreads).build();
@@ -342,7 +339,6 @@ public class WorkStationTest extends TestBase
         node.shutdown(true);
         latch.await();
 
-        final UnModifiableCollection<InitializableJob> jobList = testJobFactory.getJobList();
         assertTrue("Job instances count should not be greater equal to number of threads",
             numThreads >= jobList.size());
 
@@ -365,12 +361,13 @@ public class WorkStationTest extends TestBase
         final int maxFailures = maxRetries - 1;
 
         final RetryPolicy<String> retryPolicy = new NoRetryPolicy<String>();
+        final List<AlwaysFailingTestJob> jobList = Lists.newLinkedList();
+
         final TestJobFactoryWrapper<AlwaysFailingTestJob> testJobFactoryWrapper =
-            new TestJobFactoryWrapper(new AlwaysFailingTestJob.Factory(maxFailures));
+            new TestJobFactoryWrapper(new AlwaysFailingTestJob.Factory(maxFailures), jobList);
 
         executeInitializableJobTestNode(retryPolicy, testJobFactoryWrapper);
 
-        final UnModifiableCollection<AlwaysFailingTestJob> jobList = testJobFactoryWrapper.getJobList();
         for (AlwaysFailingTestJob job : jobList)
         {
             assertEquals("Job execution count should be 1", 1, job.executionCounter.get());
@@ -386,13 +383,13 @@ public class WorkStationTest extends TestBase
         final int maxFailures = maxRetries - 2;
 
         final RetryPolicy<String> retryPolicy = new DefaultRetryPolicy<String>(maxRetries);
+        final List<AlwaysFailingTestJob> jobList = Lists.newLinkedList();
 
         final TestJobFactoryWrapper<AlwaysFailingTestJob> testJobFactoryWrapper =
-            new TestJobFactoryWrapper(new AlwaysFailingTestJob.Factory(maxFailures));
+            new TestJobFactoryWrapper(new AlwaysFailingTestJob.Factory(maxFailures), jobList);
 
         executeInitializableJobTestNode(retryPolicy, testJobFactoryWrapper);
 
-        final UnModifiableCollection<AlwaysFailingTestJob> jobList = testJobFactoryWrapper.getJobList();
         for (AlwaysFailingTestJob job : jobList)
         {
             assertEquals("Execution count should be 3. Check if the job re-executed.", maxFailures + 1,
@@ -407,13 +404,13 @@ public class WorkStationTest extends TestBase
         final int maxRetries = 4;
 
         final RetryPolicy<String> retryPolicy = new DefaultRetryPolicy<String>(maxRetries);
+        final List<AlwaysFailingTestJob> jobList = Lists.newLinkedList();
 
         final TestJobFactoryWrapper<AlwaysFailingTestJob> testJobFactoryWrapper =
-            new TestJobFactoryWrapper(new AlwaysFailingTestJob.Factory(maxRetries));
+            new TestJobFactoryWrapper(new AlwaysFailingTestJob.Factory(maxRetries), jobList);
 
         executeInitializableJobTestNode(retryPolicy, testJobFactoryWrapper);
 
-        final UnModifiableCollection<AlwaysFailingTestJob> jobList = testJobFactoryWrapper.getJobList();
         for (AlwaysFailingTestJob job : jobList)
         {
             assertEquals("Execution count should be 3. Check if the job re-executed.", maxRetries,
